@@ -1,0 +1,248 @@
+---
+title: "EC 523 - HW 2 "
+author: "Ryan Denton"
+date: "2023-10-06"
+output: 
+  prettydoc::html_pretty:
+    theme: HPSTR
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+$~$
+
+### 1. Explain whether each of the statements below is a fact or a correlation? Justify your answer.
+$~$
+
+**a. Most top performing schools have small student bodies.**
+
+I would say that this is a fact because this does not say anything about other schools with the same or different sized student bodies. For example, what about schools that have small student bodies and perform poorly? That is not ruled out by this information and thus I believe this is a fact.
+
+$~$
+
+**b.  Married people are typically happier than unmarried people.**
+
+I would say this is a correlation because is does indeed provide information about married and unmarried people. It suggests that if you are married you are more likely to be happy than if you are unmarried.
+
+$~$
+
+**c. Among professionals, taller basketball players tend to have lower free-throw percentages than shorter players.**
+
+I would say that this is a correlation as it does indeed provide information about the shorter players relative to the taller players. It suggests that if you are a taller player you are more likely to have a lower free-through percentage than if you were a shorter player. The taller you are the lower your free-throw percentage is likely to be (a negative correlation between height and free-through percentage). 
+
+$~$
+
+**d. The locations in the U.S. with the highest cancer rates are typically small towns.**
+
+I would say this is a fact. This is because rates will be a proportion of the population and thus smaller towns may have high rates of cancer but that does not mean that living in a smaller town will increase your chances of getting cancer. A large town could have many more people with cancer and even factors that contributed to it but since the population is so large the cancer rate in that large town may be lower than the rate of a small town. Also, this says nothing about locations with lower rates.
+
+$~$
+
+**e.  Older houses are more likely to have lead paint than newer ones.**
+
+I would say this is a correlation because it tells us the chances of having lead paint in an older house relative to a newer one. This would be a positive correlation between lead paint and the age of the house (older ones having more and newer houses having less). 
+
+$~$
+
+**f.  Most colds caught in Lane County are caught on cold days.**
+
+I would say this is a fact because it says nothing about the amount of colds caught on not-cold days and it could just be that most days in Lane County are cold.
+
+$~$
+
+### 2. Comment on each of the graphs below. What does it tell us? What kind of graph is it? What is the x-axis? What is the y-axis? Is the graph misleading? Why? (Based on BW book).
+$~$
+
+**a.**
+```{r, echo=FALSE}
+library(knitr)
+include_graphics("FRED.jpg")
+```
+$~$
+
+This is a line graph showing the unemployment rate in the US from the year 2000 to the year 2021 (approximately). The x-axis represents the year and the y-axis is the unemployment rate (a percentage), according to the BLS. I would say that this graph correctly portrays the trend it is intending to show and thus not misleading.
+
+$~$
+
+**b.**
+```{r, echo=FALSE}
+include_graphics("Covid.jpg")
+```
+$~$
+
+This is a combination of a scatter plot and a line graph (we can see the points connected by a line). The x-axis represents time (in this case it is a specific date in the same year from 4/23 to 9/10 by week) and the y-axis is the increase in cumulative pediatric Covid-19 cases as a percentage, according to the American Academy of Pediatrics. I believe the graph is a bit misleading because this is a weekly increase and thus of course the first data point will start off incredibly high since this is the first time they are reporting the values. Further, many people would likely misinterpret this graph as stating that cases are falling over time, but that is not the case as it just represents the insight that the rate at which cases is increasing, is decreasing. It does allow us to see that the weekly increase rate is decreasing if you know what you are looking at. I would rather graph the weekly reported cases over the time period as the graph would be more easily understood by most and would also reflect this diminishing rate of cases over the time period as well.
+
+$~$
+
+**c.**
+```{r, echo=FALSE}
+include_graphics("Tax_Target.jpg")
+```
+$~$
+
+This graph is telling us about the total taxable income for all the filers in the US in 2008, adjusted for gross income level. So how much the government is getting in tax revenue just from taxable income per "bin" that they have defined. This is a bar graph since it is showing us the total amount for each category as opposed to the frequency (which would make it a histogram). The x-axis are bins representing the gross income that individuals fall into. The y-axis is the dollar amount that the government is getting from these bins, in trillions of USD. I would say it is a bit misleading because the bins on the x-axis are not of consistent length. There may be reasoning for this that I am just unaware of, but that seems misleading to me. the bin sizes start off as 5k, then go to 10, then 25k, then 100km and so on...
+
+$~$
+
+**d.**
+```{r, echo=FALSE}
+include_graphics("work.jpg")
+```
+$~$
+
+This graph is showing the average weekly hours worked for full-time employees in the year 2013 across various countries. This is a bar graph that is shown horizontally and in descending order from top to bottom. The x-axis represents the average weekly hours worked for full-time employees and the y-axis shows the countries. This is a bar graph so the fact that the x-axis (in this case) does not start at 0 does make me think this is misleading because this magnifies the differences between the countries. For example, the number between Poland and the UK looks larger than it actually is since its only a difference of 0.9.
+
+$~$
+
+**e.**
+```{r, echo=FALSE}
+include_graphics("gun.jpg")
+```
+$~$
+
+I don't like this graph at all! Just had to say that as my first impression. Anyways, this a line graph is showing the number of murders where a gun was used in Florida over a period of time, I think the creator of the graph is intentionally trying to make it appear as if the number fell after the law was enacted. The x-axis is time separated into sort of bins by the 1990s, 20002, 2010s, with points at each year withing those bins. The y-axis is the number of murders committed using firearms in Florida over this time period. As stated, I do not like this graph at all. I don't like that the y-axis starts at 0 at the TOP then increases in value as we go down the y-axis, it is misleading because at first it appears that this number was increasing, then decreased after the law was enacted but that is not the case. This appears to me to be intentionally misleading.  
+
+$~$
+
+**f.**
+```{r, echo=FALSE}
+include_graphics("retire.jpg")
+```
+$~$
+
+This is a line graph showing the proportion of Americans that are not yet retired who feel like their savings plan for retirement is on track. This shows us a trend over the time period from 2018 to 2022, each point is by year then the points are connected with a line. The x-axis is the year and the y-axis (were they to actually show it) is the percentage of the non-retired Americans that feel like their plan is on track. I think this is misleading. I don't like that there is not y-axis shown on the graph, the numbering of the points is not in a sequential order nor is it consistent because the last point is not numbered but shows the actual percentage (why don't they just do that for all the points?). Further, if we look at the percentage in 2018 and at 2019 we see from the legend this is just a 1 percentage point difference but the graph blows that difference up, making me think that the y-axis is intentionally scaled in a way to do that. This 1% could just be within a normal deviation due to the noise with such methods of gathering data (which here I assume is a survey), so there could really be no difference and we should be told the standard deviation. Even when looking at 2019 vs 2021, this is a 3 percentage point difference but if the standard deviation here is 5 percentage points then the graph makes it look very significant when maybe is is not significant at all and due purely to noise. 
+
+$~$
+
+### 3. In class, we used the National Longitudinal Survey of Youth 1979 to measure the correlation between income and years of education
+
+$~$
+
+**a. Re-code everyone who has 8 or fewer years of education as 8 in the data. We will interpret this category as “8 years or less”.**
+
+```{r}
+#load packages
+library(pacman)
+p_load(readr, tidyverse, ggplot2)
+
+#read in data
+nlsy79 = read_csv("nlsy79.csv")
+
+#recode as instructed
+nlsy79$hgc =  ifelse(nlsy79$hgc <=8,
+                     8,
+                     nlsy79$hgc)
+```
+
+$~$
+
+**b. Use ggplot to make a bar chart showing the share of the sample with each level of education. What percentage of the population has 17 years of education or more?**
+
+```{r}
+#create bar chart as instructed
+ggplot(data = nlsy79,
+       aes(x = hgc)) +
+  geom_histogram(stat = "count",
+                 fill = 'skyblue4', 
+                 col = 'black') +
+  scale_x_continuous(breaks = seq(8, 20, by = 1)) +
+  scale_y_continuous(expand = c(0, 0),
+                     breaks = seq(0, 24000, by = 200)) +
+  labs(title = "Share of Each Level of Education",
+       x = "Highest Grade Completed",
+       y = "Count") +
+  theme_classic()
+
+#find the percentage of the population with 17 or more years of education
+nlsy_educ_17_or_more = nlsy79 %>%
+  filter(hgc >= 17 & is.na(hgc) == 0)
+
+A = nrow(nlsy_educ_17_or_more)/nrow(nlsy79)
+
+round(A*100, 2)
+
+```
+Thus, we can see that about 8.67% has 17 years or more of education.
+
+$~$
+
+**c. Use ggplot to make a scatterplot showing the relationship between earnings and education (recoded as in part a), include the line of best fit. What is the relationship between earnings and education?**
+
+```{r}
+#I will filter out any earnings above 180,000 to get rid of the outliers and make a new dataset
+nlsy79_180000_earn_cap = nlsy79 %>%
+  filter(earn2009 <= 180000)
+
+#create the two plots and change transparency of data points to help see where majority of points are
+#plot with ouliers:
+ggplot(data = nlsy79,aes(x = hgc,
+                          y = earn2009)) +
+  geom_point(col = 'black', 
+             alpha = .4) +
+  geom_smooth(method = "lm") + 
+  labs(title = "Earnings and Education (With Outliers)",
+       x = "Highest Grade Completed",
+       y = "Earnings in 2009") +
+  scale_y_continuous(expand = c(0,0),
+                     limits = c(0, 350000),
+                     breaks = seq(0,350000,25000)) +
+  scale_x_continuous(breaks = seq(8, 20, 1)) +
+  theme_bw()
+
+#graph without outliers:
+ggplot(data = nlsy79_180000_earn_cap,aes(x = hgc,
+                          y = earn2009)) +
+  geom_point(col = 'black', 
+             alpha = .4) +
+  geom_smooth(method = "lm") + 
+  labs(title = "Earnings and Education (Without Outliers)",
+       x = "Highest Grade Completed",
+       y = "Earnings in 2009") +
+  scale_y_continuous(expand = c(0,0),
+                     limits = c(0, 185000),
+                     breaks = seq(0,185000,10000)) +
+  scale_x_continuous(breaks = seq(8, 20, 1)) +
+  theme_bw()
+
+```
+
+There appears to be a strong positive relationship between education and earning. 
+
+$~$
+
+**d. Use ggplot to make a figure showing the average earnings by years of education with the line of best fit. Comment on how well the line of best fit matches the average earnings data.**
+
+```{r}
+
+#with outliers:
+ggplot(data = nlsy79, aes(x = hgc,
+                         y = earn2009)) +
+  geom_point(stat = "summary",
+             fun = "mean",
+             col = 'black') +
+  geom_smooth(method = "lm") +
+  labs(title = "Average Earnings and Education (With Outliers)",
+       x = "Highest Grade Completed",
+       y = "Earnings in 2009") +
+  scale_y_continuous(breaks = seq(0, 170000, 15000))+
+  scale_x_continuous(breaks = seq(8, 20, 1)) +
+  theme_bw()
+
+#without outliers:
+ggplot(data = nlsy79_180000_earn_cap, aes(x = hgc,
+                         y = earn2009)) +
+  geom_point(stat = "summary",
+             fun = "mean",
+             col = 'black') +
+  geom_smooth(method = "lm") +
+  labs(title = "Average Earnings and Education (Without Outliers)",
+       x = "Highest Grade Completed",
+       y = "Earnings in 2009") +
+  scale_y_continuous(breaks = seq(0, 90000, 10000))+
+  scale_x_continuous(breaks = seq(8, 20, 1)) +
+  theme_bw()
+```
+
+This line looks to fit the data pretty well! We can see the actual averages are not too far from our line of best fit for the graph without the outliers and does pretty well in the graph with the outliers up until we get around 20 years of education then it appears to not do very well at that point. 

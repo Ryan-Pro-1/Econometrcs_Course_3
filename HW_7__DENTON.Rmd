@@ -1,0 +1,287 @@
+---
+title: "HW 7 - EC 523"
+author: "Ryan Denton"
+date: "2023-11-13"
+output:
+  prettydoc::html_pretty:
+    theme: HPSTR
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(comment = NA)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+```
+
+```{r echo=FALSE}
+#load packages
+library(prettydoc)
+library(pacman)
+p_load(tidyverse, ggplot2, readr, dplyr, stargazer, lubridate, sandwich, car, AER)
+```
+
+<br>
+
+<body style="font-size:17px; background-color: #1a1a1a; color: white;">
+
+#### *Simulate a sample of 10,000 observations from the following data generating process:*
+
+-   $Y_0 \sim \mathcal{N}(20000,5000^2)$
+-   $Y_1 \sim \mathcal{N}(20500,5000^2)$
+
+#### *where $Y_0$ is earnings without the training and $Y_1$ represents earnings with the training. The first parameters are the means of the normal distributions and the second parameters are the variances (i.e. the standard deviations squared).*
+
+```{r}
+set.seed(693224)
+
+#create Y_0 sample:
+y_0_sample = rep(NA, 10000)
+
+for(i in 1:10000){
+  y_0_sample[i] = rnorm(1, 20000, 5000)
+}
+
+#create Y_1 sample:
+y_1_sample = rep(NA, 10000)
+
+for(i in 1:10000){
+  y_1_sample[i] = rnorm(1, 20500, 5000)
+}
+
+df_1 = as.data.frame(cbind(y_0_sample, y_1_sample))
+
+
+```
+
+<br>
+
+#### *1. What is the average treatment effect in your sample? How does it compare to the true average treatment effect in the population?*
+
+```{r}
+#Find the average treatment effect in our samples
+avg_treat_effect_samples_1 = round(mean(y_1_sample) - mean(y_0_sample), 4)
+
+avg_treat_effect_samples_1
+```
+
+Thus the average treatment effect in our sample is about 577.78. Meaning those that get the certificate will make about $577.78 more on average per year than those that do not get it. Comparing this to the average treatment effect of the population of 500, we see the sample ATE is about 77.78 higher.
+
+<br>
+
+#### *2. Given our assumption that people choose to get the training based on their net benefits (i.e. earnings gain - costs of training), what share of your sample are compliers, always takers, and never takers?*
+
+```{r}
+#count compliers
+Compliers = df_1 %>%
+  filter(0 <= df_1[ , 2] - df_1[ , 1] & df_1[ , 2] - df_1[ , 1] <= 1000)
+
+nrow(Compliers)
+
+#count the always takers
+Always_Takers = df_1%>%
+  filter(df_1[ , 2] - df_1[ , 1] > 1000)
+
+nrow(Always_Takers)
+
+#count never takers
+Never_Takers = df_1 %>%
+  filter(df_1[ , 2] - df_1[ , 1] < 0)
+
+nrow(Never_Takers)
+
+
+
+```
+
+So there are 553 compliers, 4,785 always takers, and 4,662 never takers.
+
+<br>
+
+#### *3. What is the average impact of the training for compliers, always takers, and never takers?*
+
+```{r}
+#compliers ATE
+(compliers_ATE = mean(Compliers[,2]) - mean(Compliers[,1]))
+
+#always takers ATE
+(always_takers_ATE = mean(Always_Takers[,2]) - mean(Always_Takers[,1]))
+
+#never takers ATE
+(never_takers_ATE = mean(Never_Takers[,2]) - mean(Never_Takers[,1]))
+```
+
+The ATE for compliers is about \$505.94, for always takers is about \$6,466.47, and for never takers is about -\$5,457.75.
+
+<br>
+
+#### *4. Why is it reasonable to assume there are no defiers given our assumptions about how people are making participation decisions?*
+
+It makes sense here because the impact of treatment is positive on average and thus if you are assigned treatment then you would be able to get the certificate for free. If you are assigned to treatment and you are not a never taker, then you will have a positive return in earnings and so it would not make sense to defy to assignment. Similar logic holds for if assigned to control.
+
+<br>
+
+#### *So far, we have been using the full sample because we observe both potential outcomes. Now, let's pretend we are in the real world and only observe the outcome that results from someone's participation decision. To this end, randomly assign half of your sample to a treatment group and half to a control group.*
+
+```{r}
+set.seed(7684)
+
+#create a new df thats a copy of the original
+df_2_with_assigment = df_1
+
+#add new column. 1 = assigned to treatment group, 0 = assigned to control group
+df_2_with_assigment = df_2_with_assigment %>%
+  mutate(assigned_treatment = rbinom(10000, 1, .5))
+
+```
+
+<br>
+
+#### *Generate an indicator $P$ that equals 1 if someone receives the training and 0 otherwise. Remember: we have assumed people make participation decisions entirely based on their earnings with or without the training less any costs of the training. This should depend on the observations treatment status.*
+
+```{r}
+#create new column indicating whether the individual received the training or not
+df_2_with_assigment = df_2_with_assigment %>%
+  mutate(P = ifelse(0 <= df_1[ , 2] - df_1[ , 1] & df_1[ , 2] - df_1[ , 1], 1, 0))
+```
+
+<br>
+
+#### *Generate a variable $Y$ equal to observed earnings using the following formula: $Y=PY_1+(1-P)Y_0$.*
+
+```{r}
+df_2_with_assigment = df_2_with_assigment %>%
+  mutate(Y = P*y_1_sample + (1-P)*y_0_sample)
+```
+
+<br>
+
+#### *5. Use a regression to estimate the intent-to-treat effect in your sample. What is the point estimate and  the 95\% confidence interval around the estimate?*
+
+```{r}
+#create regression model
+ITT_Mod_1 = lm(Y ~ assigned_treatment, data = df_2_with_assigment)
+
+#create robust SEs
+robust_se_1 = sqrt(diag(vcovHC(ITT_Mod_1,
+                             type = "HC1")))
+```
+
+<center>
+```{r echo=FALSE}
+#Display results in table
+stargazer(ITT_Mod_1,
+          se = list(robust_se_1),
+          dep.var.labels = "Y",
+          covariate.labels = "T",
+          keep.stat = c("n",
+                        "adj.rsq"),
+          type = "text",
+          style = "aer",
+          omit.table.layout = "n")
+```
+</center>
+
+Which shows that the point estimate of the ITT is about -51.820 and the 95\% confidence interval is: $[-212.26, 108.62]$
+
+<br>
+
+#### *7. Use two-stage least squares to estimate the local average treatment effect in your sample. Comment on the point estimate and the 95\% confidence interval around the estimate. How does this compare to the effects we estimated earlier in this problem?*
+
+```{r}
+#two-stage least squares
+TS_LS_mod_1 = ivreg(Y ~ P | assigned_treatment, data = df_2_with_assigment)
+
+#create robust SEs
+robust_se_TS_LS = sqrt(diag(vcovHC(TS_LS_mod_1,
+                             type = "HC1")))
+
+```
+
+<center>
+```{r echo=FALSE}
+#Display results in table
+stargazer(TS_LS_mod_1,
+          se = list(robust_se_TS_LS),
+          dep.var.labels = "Y",
+          covariate.labels = "P",
+          keep.stat = c("n",
+                        "adj.rsq"),
+          type = "text",
+          style = "aer",
+          omit.table.layout = "n")
+```
+</center>
+
+Here we see the point estimate is about 5,646, which is way higher than the previous estimate found, but is not significantly different from 0. The 95\% confidence interval here is: $[-15,265.44, 26,556,64]$, which is a huge interval and shows that some compliers are better off and some are actually worse off.
+
+<br>
+
+#### *8. Re-run your code but drawing a sample of $1,000,000$ observations instead of $10,000$. How does the estimated LATE compare to the earlier treatment effects now?*
+
+```{r}
+#redo but now with 1,000,000 individuals and find the LATE
+
+#create df
+set.seed(69678574)
+
+#create Y_0 sample:
+y_0_sample_1Milly = rep(NA, 1000000)
+
+for(i in 1:1000000){
+  y_0_sample_1Milly[i] = rnorm(1, 20000, 5000)
+}
+
+#create Y_1 sample:
+y_1_sample_1Milly = rep(NA, 1000000)
+
+for(i in 1:1000000){
+  y_1_sample_1Milly[i] = rnorm(1, 20500, 5000)
+}
+
+df_1_1Milly = as.data.frame(cbind(y_0_sample_1Milly, y_1_sample_1Milly))
+
+
+
+#add new column. 1 = assigned to treatment group, 0 = assigned to control group
+df_1_1Milly = df_1_1Milly %>%
+  mutate(assigned_treatment = rbinom(1000000, 1, .5),
+         P = ifelse(0 <= df_1_1Milly[ , 2] - df_1_1Milly[ , 1] & df_1_1Milly[ , 2] - df_1_1Milly[ , 1], 1, 0),
+         Y = P*y_1_sample_1Milly + (1-P)*y_0_sample_1Milly)
+
+
+
+
+#first stage:
+first_stage_1Milly = lm(P ~ assigned_treatment, data = df_1_1Milly)
+
+#second stage
+second_stage_1Milly = lm(Y ~ assigned_treatment, data = df_1_1Milly)
+
+#two-stage least squares
+TS_LS_mod_1Milly = ivreg(Y ~ P | assigned_treatment, data = df_1_1Milly)
+
+#create robust SEs
+robust_se_TS_LS_1Milly = sqrt(diag(vcovHC(TS_LS_mod_1Milly,
+                             type = "HC1")))
+
+
+#Display results in table
+stargazer(TS_LS_mod_1Milly,
+          se = list(robust_se_TS_LS_1Milly),
+          dep.var.labels = "Y",
+          covariate.labels = "P",
+          keep.stat = c("n",
+                        "adj.rsq"),
+          type = "text",
+          style = "aer",
+          omit.table.layout = "n")
+
+```
+
+Now we see that the estimated impact on compliers is about 3,255 (lower than before and with a lower standard error), but still with a very wide confidence interval that does not exclude 0 (no effect) r even potentially a negative effect. Further, we see that the control group for the compliers have a little bump up in estimated yearly income. 
+
+
+
+</body>

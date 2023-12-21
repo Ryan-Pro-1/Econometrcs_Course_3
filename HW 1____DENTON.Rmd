@@ -1,0 +1,148 @@
+---
+title: "EC 523 - HW 1"
+author: "Ryan Denton"
+date: "2023-09-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+$~$
+
+<h1> Average Class Size </h1>
+
+
+$~$
+
+**1.Install and load the ‘readr’ and ‘dplyr’ packages.**
+```{r}
+library(readr)
+library(dplyr)
+```
+
+$~$
+
+**2.Set your working directory to the folder on your computer where you downloaded “EconEnrollment.csv” using** **the “setwd()” function. Load the data using the read_csv function from the**
+**‘readr’ package. Give the dataframe a logical name, like “enroll”.** 
+```{r}
+#NOTE: I prefer to make a project and thus the code here will look a bit different, but it is the same process.
+
+#Read in data
+list.files()
+enroll = read.csv("EconEnrollment.csv" )
+```
+
+$~$
+
+**3.Fill in the missing pieces of the following code to find the average class size in each term. In what terms were class** **sizes biggest and smallest?**
+```{r}
+(by_term = enroll%>%
+  group_by(Term)%>%
+  summarise(avg = mean(enrollment, na.rm = T)) %>%
+  arrange(avg))
+
+#Notice that the last row reads "NaN". This is due to no entries in the enrollment column for 2020 Q1. Thus, we can just drop this from our "by_term" dataset of averages:
+by_term = by_term %>%
+  filter(is.na(avg) == 0)
+
+by_term
+```
+Now we can see that the smallest average class size was 59.7, which was in 2019 Q1. We also see the largest average class size was 98.1, which was in 2014 Q3.
+
+$~$
+
+
+**4.What was the average class size in the economics department over this time period?**
+```{r}
+(avg_class_size_total = round(mean(enroll$enrollment, na.rm = T), 2))
+```
+The average class size in the economics department over this time period was about 82.11 students per class.
+
+$~$
+
+
+**5.What was the average class size in the economics department by level of the course over this time period?**
+```{r}
+(by_level = enroll%>%
+  group_by(level)%>%
+  summarise(avg = mean(enrollment, na.rm = T)) %>%
+  arrange(avg))
+```
+Here we see the intro level had an average class size of 204 students, intermediate level had an average of 75.9 students, masters level had an average of 53.8 students, and the PhD level had an average of 12.4 students over this time period.
+
+$~$
+
+**6.Now, calculate the average class size by level using the weighted.mean() instead of the mean() function. Weight the mean by each classes enrollment. Interpret what this weighted average tells us. Would a prospective student prefer knowing the weighted or unweighted average? What about a prospective faculty hire?**
+```{r}
+(by_level_weighted = enroll%>%
+  group_by(level)%>%
+  summarise(avg = weighted.mean(enrollment,enrollment, na.rm = T)) %>%
+  arrange(avg))
+```
+Now we see the weighted means of class sizes by level are as follows: intro level had a weighted average class size of 251 students, intermediate level had a weighted average of 87 students, masters level had a weighted average of 65.5 students, and the PhD level had a weighted average of 14.3 students over this time period.
+
+The weighted average gives higher weights to classes that have more students in them, for example classes with more students will be weighted more heavily than classes with relatively fewer students when computing the average. We can see that this is indeed true in the differences between the two tibbles showing the averages as the increase in the intro level is much higher than the increase was for the PhD level.
+
+I think a prospective student would care about the weighted average since that will better let them know what levels have more students since they will be weighted more heavily. As for a faculty hire, I think they may care more about the non-weighted average since that will give a good idea of what the actual average is for each level and weight them each the same and thus the comparison between the levels will be easier since they will all be weighted the same. 
+
+$~$
+
+<h1> Predicting Criminality </h1>
+
+$~$
+
+**2a. What is the authors' research question?**
+
+$~$
+
+How accurate are fully automated inferences in terms of predicting criminality among people? Can such automated techniques really predict if someone is a criminal or not?
+
+$~$
+
+**2b. What do the authors' find? How accurate are their predictions?**
+
+$~$
+
+They find that their models are indeed very good at predicting criminals an non-criminals by using automated systems. Going to the results section (section 3.2) we see that, assuming they did everything they said they did properly and the methods are valid (though I cannot confidently say they did or did not as I do not fully understand the methods they are using), they achieved a very high accuracy when using CNN (though I do not understand convolution neural networks) and when using a method that combines landmark points, modular PCA, and LBP when using the classification methods SVM, KNN, and LR. All reach a accuracy of 86% or higher, based on their research and claims. Further, the missing rate for CNN and using a combination of the features in the other classification methods is not too high in my opinion, never being higher than about 18%. Though that 18% could be way too high depending on what this is being used for. 
+
+But, this does not mean the automated method would be good at picking criminals out of the general population since other groups of people that are not criminals may also share the facial characteristics that are seperating the criminal from the non-criminals in this study.
+
+$~$
+
+**2c. As a student in a graduate economics course, would you describe their methods as accessible or inaccessible?**
+
+$~$
+
+For me as a grad student, and the others as well, I would say their methods are inaccessible. I say this because they use ID photos of criminals by a confidentiality agreement with the police, which I do not think would be even possible for us to obtain. We may be able to get other photos using a web scraping tool. Further, they use methods that, at least for me, are beyond the scope of anything learned so far (such as convolution neural networks and web scraping for ID photos). I do not understand the concept of CNN let alone how to properly use that method.
+
+$~$
+
+**2d. How do the authors collect their data? Are the photos of the criminals and non-criminals comparable?**
+
+$~$
+
+They collected the ID photos of the non-criminals using a web scraping tool (a "web spider tool" they call it), at least I believe this is a web scraping tool. The criminal photos are gathered both by some being posted due to them being wanted criminals and the rest coming from a confidentiality agreement with the police. So, both sets are indeed of the same type of photo (an ID photo) and thus I would say that they are indeed comparable. 
+
+$~$
+
+**2e. Look at Figure 10. What jumps out to you about the main difference between the “average” criminal’s face compared to the “average” non-criminal’s face?**
+
+$~$
+
+What stands out to me most are the mouth and the eyes. In terms of the mouth, more specifically the corners of the mouth. As for the eyes I cannot specifically portray with words what is it exactly that I see is different. The eyes of the criminals seem less inviting in a way (though that could also be my bias since I know which are criminals and which are not). As for the corners of the mouth, it appears the corners of the criminals mouths point downward more than the non-criminals mouths do. 
+
+These differences could be from a variety of things. Such as how criminals are more likely to have some sort of trauma, substance-use issue, mental health issue, and other things along those lines. Thus, these could manifest themselves in such ways that could be causing this "less inviting" look in the criminals' eyes and their mouths to look more like a frown relative to the non-criminals. But, that is just my opinion!
+
+$~$
+
+**2f. True/False/Uncertain. You need to understand the methodology of a paper to assess whether it’s conclusions are plausible. Justify your answer.**
+
+$~$
+
+I believe this is "uncertain". I think this because in many situations if you do not understand the methodology then you do not know if they did things correctly or if what they are doing even makes sense to do in the situation. For example, when reading this paper I did not understand the methodologies (as explicitly mentioned earlier) and thus I do not believe that I can properly assess if the conclusions are plausible. One may have some understanding of the underlying concepts behind the methodologies being used and believe that they think that their conclusions are plausible or not plausible, but I think this is a false sense of confidence for the reasons just mentioned. This is why in question 2b I explicitly stated that I did not understand what methodologies they were using. Thus, I was not confident in their accuracy and had to assume they did things properly and their methods were indeed valid. 
+
+But also, in some situations just knowing some basics about what they are doing could be enough without fully understanding the methodologies they are using. For example, if a paper claimed that gravity as we know it (in terms of things falling down from our perception when we drop them) was false and they did some complicated physics and came to the conclusion that gravity isn't real and things actually fall sideways from our perception (or some wild example such as this one) then even without understanding the complex physics one could be very confident that the authors of the paper have an implausible conclusion.
+
+So, I would say it depends on the subject of the paper. For this paper I would say yes but one could think of other papers in which I would say no.

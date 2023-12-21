@@ -1,0 +1,122 @@
+---
+title: "HW 8 - EC 523"
+author: "Ryan Denton"
+date: "2023-11-23"
+output: 
+  prettydoc::html_pretty:
+    theme: HPSTR
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(comment = NA)
+
+```
+
+```{r echo=FALSE}
+#load packages
+library(prettydoc)
+library(pacman)
+p_load(tidyverse, ggplot2, readr, dplyr, stargazer, lubridate, sandwich, car, AER, fixest, modelsummary)
+```
+
+<br>
+
+## **Difference in Differences**
+
+<br>
+
+#### *1. Estimate the relationship between property crime and the unemployment rate using the "canonical difference-in-difference" specification:*
+
+$$Property_{s,t} = \alpha+\beta Unemp_{s,t} + \gamma_s + \delta_t + \varepsilon_{s,t}$$
+
+<br>
+
+```{r}
+#load data
+crime_df = read_csv("crime_unemp.csv")
+
+#clean names
+names(crime_df) = c("state",
+                    "unemployment",
+                    "year",
+                    "population",
+                    "violent_total",
+                    "murder",
+                    "rape",
+                    "robbery",
+                    "agg_assault",
+                    "property_total",
+                    "burglary",
+                    "larceny_theft",
+                    "vehicle_theft")
+
+#estimate the model
+mod_1 = lm(property_total ~ unemployment + population + as.factor(year) + as.factor(state),
+              data = crime_df)
+
+#cluster se by state
+cluster_se_1 = sqrt(diag(vcovHC(mod_1, cluster=crime_df$state)))
+
+```
+
+<br>
+
+#### *2. How sensitive is the coefficient on unemployment to how we deal with time effects (i.e. how do the results change if we do not control for time fixed effects or if we instead control for a linear or quadratic trends)?*
+
+```{r}
+#estimate the model without the fixed effects controls
+mod_2 = lm(property_total ~ unemployment + population,
+              data = crime_df)
+
+#cluster se by state
+cluster_se_2 = sqrt(diag(vcovHC(mod_2, cluster=crime_df$state)))
+
+#put models in a table to compare (leaving out all other coefficients and only looking at unemployment)
+stargazer(mod_1, mod_2,
+          se = list(cluster_se_1, cluster_se_2),
+          keep = "unemployment",
+          keep.stat = c("n", "adj.rsq"),
+          dep.var.labels = "Property Crimes",
+          column.labels = c("With Controls", "W/O Controls"),
+          model.numbers = F,
+          type = "text",
+          style = 'aer')
+
+```
+
+Here we can see that if we do not control for the time fixed effect (year and state) then the coefficient on unemployment increases significantly and becomes "statistically significant" vs with the controls the coefficient was not significantly different from 0.
+
+<br>
+
+## **Reading Research**
+
+<br>
+
+#### *Skim the  paper "Misaligned incentives and the scale of incarceration in the United States" by Aurelie Ouss.*
+
+<br>
+
+#### *1. Describe the main research design in the study.*
+
+This person uses a natural experiment design, in this case one that changed the costs in terms of who that burden fell upon in order to see if that changed the interested outcome. I believe this is also a discontinuity design, since they look at the financial structure of juvenile corrections before and after a specific date: 1966.
+
+<br>
+
+#### *2. Would __you__ (not the author) classify the research design as a regression discontinuity design, a difference-in-difference design, a before and after comparison, or a cross-sectional comparison?*
+
+As stated above, I would say this is a regression discontinuity design since there is a specific date/year in which one thing changes (that would be where the discontinuity is).
+
+<br>
+
+#### *3. What does the paper find? *
+
+The paper found that when counties internalized more of the costs associated with juvenile corrections (all the costs that go into that) then the rate of incarceration dropped significantly and that the rate of arrests did not increase. This would imply that once a county is more responsible for the costs, they are not as careless with that money and thus counties seem to be sending people to a correctional facility when the state bears most the costs. They conclude that the evidence suggests an overuse of the correctional facility system due to incentives not being properly aligned.
+
+<br>
+
+#### *4. Do you think the result is credible? If not, describe the confounder you are worried about. *
+
+Yes I think these results are credible, I think that once the people in a county bear more of the costs then they will think harder about the decision instead of just throwing people in facilities since the state pays for most of the associated costs. It makes sense to me that when you internalize those costs more then the counties will change their behavior, sort of like a corrective tax.
+

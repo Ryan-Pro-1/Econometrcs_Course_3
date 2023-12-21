@@ -1,0 +1,357 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(comment = NA)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+```
+
+```{r echo=FALSE}
+#load packages
+library(prettydoc)
+library(pacman)
+p_load(tidyverse, ggplot2, readr, dplyr, stargazer, lubridate, sandwich, car, readxl)
+```
+
+```{r echo=F, out.width=1200, out.height=300}
+knitr::include_graphics("img_3.jpg")
+```
+
+```{r echo=F, results='hide', message=FALSE}
+#data===========================================================================================
+
+#CMC
+mc_volume_monthly_2013_to_2023 = read_csv("BTC_MC_coinmarketcap.csv")
+
+
+#OTHER
+df <- read.csv("bitcoin_data.csv")
+df = df %>%
+  mutate(Date =  as.Date(Date, "%m/%d/%Y"),
+         Adjusted_Transaction_Volume.USD. = as.numeric(Adjusted_Transaction_Volume.USD.)/1000000000,
+         marketcap.USD. = as.numeric(marketcap.USD.)/1000000000,
+         price.USD. = as.numeric(price.USD.),
+         Active_Addresses = as.numeric(Active_Addresses))
+
+names(df) = c("Date",
+              "Adj_transaction_volume_billions_of_USD",
+              "Marketcap_billions_of_USD",
+              "Price_USD",
+              "Active_addresses")
+
+
+
+#clean up data a bit---------------------------------------------------------------------------------
+
+names(mc_volume_monthly_2013_to_2023)
+
+#CMC data
+mc_volume_monthly_2013_to_2023 = mc_volume_monthly_2013_to_2023 %>%
+  mutate(marketCap = marketCap/1000000000,
+         volume = volume/1000000000,
+         Date = as.Date(timestamp))
+
+names(mc_volume_monthly_2013_to_2023) = c("close_price",
+                                          "monthly_volume_in_billions_USD",
+                                          "monthly_marketCap_in_billions_USD",
+                                          "date")
+
+mc_volume_monthly_2013_to_2023 = mc_volume_monthly_2013_to_2023[, -5]
+#================================================================================================
+
+```
+
+<br>
+
+<h1 style = "font-size: 36px; color: white;">
+  <center> 
+  **Is Bitcoin Becoming More Popular Over Time and Should Investors Be Interested?** 
+  </center> 
+</h1>
+
+
+<br>
+<br>
+
+<h3 style = "font-size:30px; color: gold;">
+  <left>
+  *Introduction*
+  </left>
+</h3>
+
+<body style="font-size:17px; background-color: #1a1a1a; color: white;">
+  <left>
+  <p style="font-family:courier;">
+  Bitcoin (BTC) is a decentralized digital asset that was created in 2008 - 2009 in response to the the financial banking crisis. The creator wanted a currency that was 'trustless', meaning that it does not count on the trust of any centralized entity, (because we have all seen how badly that can go), that had a limited supply of only 21 million coins that could ever be in existence (unlike the scenario in which central banks can print new money), and that was easy to publicly follow in terms of the public ledger that anyone can view on the blockchain. Though this technology and currency is meant to be decentralized, some regulation would indeed be a good thing in my opinion since it would help institutional and retail investors feel more at ease. Note that decentralized and regulation do not need to contradict one another, as you can have things that are both. These were the motivators that sparked Bitcoin's existence and, as anyone with an internet connection can see, started a revolution in the digital currency space. Those that were buying BTC in 2009 were getting it for a price under \$0.10 and those that held it until it hit a all-time high of around \$65,000 in the previous bullrun made an insane 650,000X on their money, meaning if you just bought \$1 worth of BTC in 2009 and held onto that until the previous bullrun, it would have been worth $650,000! But beyond the financial returns, blockchain technology boasts many benefits. Some of those benefits are as follows: greater transparency of transactions (enhancing trust of participants), greater levels of being able to track transactions, reduced transaction costs, reduced middle-men in transactions improving efficiency, faster transactions in many situations, and more. All of these are incredibly important for any financial system and thus the technology BTC and other cryptos run on is, in my opinion, the future of finance. 
+  </p>
+  
+  <p style="font-family:courier;">
+  But, this is not an article going in depth about the details of the technology of BTC nor is it about going in-depth about how the technology works, it is about asking the question: is Bitcoin becoming more popular over time? Though the answer to this question for anyone involved in the space is obvious, we will attempt to add a bit of data analysis to evaluate whether or not it is becoming more popular and adopted over time. This will help potential investors decide whether or not they should be interested in such an asset class as well as shed some light on BTC's growth over time for the general public that may be unaware that such a groundbreaking technology even exists. We will seek to answer this question by looking at a few indicators of Bitcoin adoption/popularity over time. We will look at the market cap from 2013 up until the present day (at the time of writing this) at the monthly level and we will look at the number of active addresses from 4/28/2013 to 11/22/2018 at the daily level. We will also briefly look at how black swan events and bear cycles have impacted the price of BTC. Note that the time periods of the market cap we will be looking at do not match that of the data we have on the daily active addresses. This is due to not being able to find data from 2013 to the present and thus we will use the active address data from 2013 to 2018 as a sort of proxy and assume this overall trend continues on average. Let's start by looking at the daily market cap over time using data from CoinMarketCap.
+  </p>
+
+<br>
+
+<h3 style = "font-size:30px; color: gold;">
+  <left>
+  *Market Capitalization*
+  </left>
+</h3>
+
+<p style="font-family:courier;">
+  Market cap is an easy and useful metric when assessing risk and potential rewards. It also shows public/institutional interest and market dominance. It is calculated by multiplying the value of each BTC by the total supply that is in the market. For example, at the time of writing this BTC is at a price of \$29,886 with a circulating supply of 19,520,956, hence the market cap at the time of writing is \$583,403,291,016 and makes up about 51% of the entire market cap of all cryptocurrencies currently in existence. If we look at the market cap of BTC from 2013 up until now we can see the dramatic rise over the past decade:
+</p>
+
+<br>
+<br>
+```{r echo=FALSE, results = 'hide',message=FALSE, fig.width=11, fig.height=7}
+ggplot(data = mc_volume_monthly_2013_to_2023,
+      aes(x = date,
+           y = monthly_marketCap_in_billions_USD)) + 
+  geom_line(col = 'blue2',
+            size = 0.75) +
+  scale_x_date(date_labels = ("%b %y"),
+               date_breaks = "6 month") +
+  scale_y_continuous(expand = c(0,0),
+                     breaks = seq(0, 1200, by = 50)) +
+  expand_limits(y = c(0, 1200)) +
+  labs(title = "BTC Market Cap.",
+       x = "Date (Month and Year)",
+       y = "Market Cap. (In Billions of USD)")
+```
+<br>
+<br>
+
+  <p style="font-family:courier;">
+  Which clearly shows a massive increase, indicating that popularity increased by a large amount. The minimum market cap over the range of this dataset is \$779,500,000 in 2013 and the maximum is about \$1,300,000,000,000 (that is 1.3 TRILLION) at the peak of the most recent bull cycle in 2021. This is about a 166,674% increase due to increased interest in BTC, which increases demand.
+  </p>
+<br>
+
+  <p style="font-family:courier;">
+  To look even further, we can view the same data but with the log of market cap on the vertical axis and add a line of best fit, as seen below.
+  </p>
+
+<br>
+<br>
+```{r echo=FALSE, results = 'hide',message=FALSE, fig.width=11, fig.height=7}
+ggplot(data = df,
+      aes(x = Date,
+           y = log(Marketcap_billions_of_USD))) + 
+  geom_line(col = 'blue2', size = .75) +
+  geom_smooth(method = "lm", se = F)+
+  scale_x_date(date_labels = ("%b %y"), date_breaks = "6 month") +
+  labs(title = "BTC Log Market Cap.",
+       x = "Date (Month and Year)",
+       y = "Log Market Cap. (In Billions of USD)")
+```
+<br>
+<br>
+
+  <p style="font-family:courier;">
+  The market cap data clearly provides support for the claim that BTC is only becoming more and more popular over time and investors are very interested in investing in this asset. Next we will look at the daily active wallet addresses. Note that the rest of the data used is from data found on Kaggle.
+  </p>
+
+<br>
+
+<h3 style = "font-size:30px; color: gold;">
+  <left>
+  *Daily Active Addresses*
+  </left>
+</h3>
+
+  <p style="font-family:courier;">
+  Now we take a look at the daily active BTC addresses from 4/28/2013 to 11/22/2018 as our next indicator of popularity among investors over time. Active addresses is the number of unique sending and receiving addresses participating in transactions on the given day. So if wallet A sends BTC to wallet B, then that is a count of 2 for this indicator for that day. If the same wallet A and B sent BTC to each other on the same day, this would still only be a count of 2 for that day since the data does not double count such things. This will shed light on whether or not people are actively using BTC as payment for goods and services (or maybe just moving it around, but we don't assume that people are just moving it around for no reason, in general). We must also keep in mind the fact that this number also increases if someone were to send BTC from a decentralized wallet they owned to a wallet of their own as well on a centralized exchange (maybe to sell it for USD). Let's take a look at the following graph, which shows the log of active addresses, as defined above, over time along with a linear line of best fit to show the general trend over time. Note we use the log of active addresses because the variation over this time period is so large and thus we wish to transform our graph so that a linear regression line fits the data better.
+  </p>
+
+<br> 
+<br>
+```{r echo=FALSE, results = 'hide',message=FALSE, fig.width=11, fig.height=7}
+ggplot(data = df,
+      aes(x = Date,
+           y = log(Active_addresses))) + 
+  geom_line(col = 'red4', size = .6) +
+  geom_smooth(method = 'lm', se = F) +
+  scale_x_date(date_labels = ("%b %y"), date_breaks = "6 month") +
+  labs(title = "BTC Log of Active Addresses (2013 - 2019)",
+       x = "Date (Month and Year)",
+       y = "Log of Daily Active Addresses")
+```
+<br>
+<br>
+
+  <p style="font-family:courier;">
+  Clearly we can see that the overall trend is positive. We go from about 4,500 active daily wallets to about 1,300,000 over the span of 5 years, showing strong support and further evidence for the claim that BTC is becoming much more popular over time. People are using BTC and actively interacting with it in increasing numbers and this trend has only continued to be positive from 2018 to the present day.
+  </p>
+<br>
+  
+  <p style="font-family:courier;">
+  In addition to this, let's now regress price on the number of active wallet addresses to see if there is a relationship. After doing this we get the following:
+  </p>
+  
+<br>
+  
+<br>
+  
+```{r echo=FALSE}
+#lin model
+mod = lm(Price_USD ~ Active_addresses, data = df)
+
+#get robust SEs
+robust_se = sqrt(diag(vcovHC(mod,
+                             type = "HC1")))
+```
+
+<center style = "font-size:24px;">
+```{r echo=FALSE, results='asis'}
+stargazer(mod,
+          se = list(robust_se),
+          keep = c("Price_USD", "Active_addresses"),
+          covariate.labels = "Daily Active Addresses",
+          dep.var.labels = "Price (USD)",
+          keep.stat = c("adj.rsq", 'n'),
+          type = 'html',
+          style = "aer",
+          omit.table.layout ='n')
+```
+</center>
+<br>
+
+<br>
+
+  <p style="font-family:courier;">
+  This tells us that there is indeed a significant effect of the active daily active wallet addresses on the price, which makes sense intuitively, but we need to take these values with a grain of salt since this is a very simple regression model and there are many potential confounders since there are so many variables that affect the price of BTC. This is saying that, over this time period, for each increase in the daily active wallet addresses, we would expect the price of BTC to increase by about \$0.01, all else equal. Now, this may not seem like a lot, but if we think about it in a more realistic way, we can see that the impact is significant. Rarely is the change in daily active addresses by a unit of 1, so another way to think about this is to think that for every additional 1,000 addresses that are active in a day, we would expect to see the price of BTC to increase by about \$9. This is of course assuming that the buys for the day are larger than the sells. But, we also must keep in mind that this is an asset that is actively traded, so if the active addresses were to increase by a lot and the sells for the day were greater than the buys, then the price would fall of course. This would probably correspond to the market cycles but the overall trend appears to be positive on the price of BTC. Below is a graph plotting the log of BTC price and the log of the daily active addresses:
+  </p>
+
+<br>
+<br>
+```{r echo=FALSE, results = 'hide',message=FALSE, fig.width=11, fig.height=7}
+ggplot(data = df,
+       aes(x = log(Active_addresses),
+           y = log(Price_USD))) +
+  geom_point(col = "aquamarine4") +
+  geom_smooth(method = 'lm', se = F) +
+  labs(title = "BTC Price Vs Active Addresses (2013 - 2019)",
+       x = "Log of the Daily Active Addresses",
+       y = "Log of the Price (USD)")
+```
+<br>
+<br>
+
+  <p style="font-family:courier;">
+  Which again clearly shows a positive trend. Indicating that, in general, the more active addresses there are then the higher the price will be. Further, this metric also confirms that BTC is becoming much more popular over time.
+  </p>
+  
+<br>
+
+<h3 style = "font-size:30px; color: gold;">
+  <left>
+  *Black Swans & Bears*
+  </left>
+</h3>
+
+  <p style="font-family:courier;">
+  Now we turn briefly to a few topics that affect BTC that are less about numerical analysis and more about psychological/sociological factors and perspectives within our global society and the US in particular. The crypto market, like any other market, has it's share of bad actors in the space. Indeed, due to the lack of regulations and the fact that many crypto projects have creators that remain anonymous, the crypto market is a lot more risky and has many more scams going on daily than most other markets. But, if you can navigate the space properly, there is a lot of money to be made. What is even more important, though, is for people to realize that just because these types of things occur in the space does not mean that the technology is any less important. There will always be bad actors that take advantage for their own personal gains. Also, we have seen unexpected events that nobody could have predicted and that have had major impacts, known as 'Black Swan' events, taint the crypto market as we have all seen in the more traditional markets as well (for example Enron and Madoff). Bad actors are everyone, but that does not mean that all of crypto is a scam (just about 98% of projects are, so be careful if you decide to invest).
+  </p>
+<br>
+  
+  <p style="font-family:courier;">
+  The two most recent major crashes in the crypto market came from two projects that were very popular and very well-known: Terra Luna and FTX. The latter even having ties to the US government (through political donations) and famous people like Tom Brady. The men behind these project were Do Kwon (Terra Luna) and Sam Bankman Fried (FTX). These are people that used the crypto market for nefarious purposes and harm the reputation of cryptocurrency in the process, as well as financially destroy the lives of everyday people. This negative impact can be seen by cross-referencing the dates in which Terra Luna and FTX collapsed with the price chart of BTC, as seen below (the blue line represents when Terra Luna's crash began brewing and the green like is for when the crash of FTX began). These crashes clearly had an effect on the price of BTC and caused many people to be even more fearful of crypto in general, but as the graph shows this did not keep the popularity of BTC down for long, as it begins to rise once again after these events.
+  </p>
+<br>
+  
+  <p style="font-family:courier;">
+  Even with those types of events occurring it is clear many people still believe that cryptocurrencies such as BTC, are the future of money and finance. Maybe not these coins in particular, but the technology they run on will be the future, we are already seeing talks about Central Bank Digital Currencies (CBDCs) and it seems like this being the next step in the evolution of money is inevitable. The issue with CBDCs is that crypto was built as a DEcentralized alternative to the centralized money we know today, being born out of the ashes of the 2008-2009 crisis in hopes that the technology could be used in ways that prevent such things from happening. Which is why we see many people expressing their lack of support for CBDCs.
+  </p>
+<br>
+  
+  <p style="font-family:courier;">
+  Further, we have been in a bear market, which is a period of prolonged price declines in a market, since the end of 2021 and so we have seen cryptocurrencies drop in price by a large amount. BTC dropped from about \$65,000 to around \$17,000, which is about a 74% drop in price. Other cryptos have fallen in price as much as 95%. All the the before mentioned have contributed to a lot of the public to develop strong negative feelings toward crypto as a whole. Note that the start of bear markets in the graph below are marked by a red line but I have left out any bear markets that occurred before the one in 2017 since the fluctuations in price are hard to see when the entire price chart is being shown. But, these types of things happen even in traditional financial markets and so we must not let it deter us from the technology. With those topics being touched on briefly, let's touch on a more positive note. That is, I believe we are beginning to see the start of a bull market now and will see prices begin to increase over the next several months, with ups and downs along the way of course, and then peak in 2025 before the next bear cycle begins. This is just my opinion though based on the traditional market cycles that also coincide with the Bitcoin halving and presidential elections. These macro trends are cyclical in nature and very powerful catalysts in financial markets. Further, with the US government debasing our currency through rapid money printing and the vast amount of debt we have (not to mention the interest payments on that debt alone), people are flocking to BTC and other cryptos that cannot just be printed out of thin air. All of these will bring in billions of dollars into the space, giving great returns on investment as well as incentivizing/funding crypto projects, which will only further the technology and grow the space in the long run. But, nobody knows what will happen in the future, least of all some econ student!
+  </p>
+<br>
+  
+  <p style="font-family:courier;">
+  Below is a graph of BTC price with red indicating the start of bear cycles, blue indicating when Terra Luna began to collapse, and green indicating when FTX began to collapse.
+  </p>
+
+<br>
+<br>
+```{r echo=FALSE, results = 'hide',message=FALSE, fig.width=11, fig.height=7}
+ggplot(data = mc_volume_monthly_2013_to_2023,
+       aes(x = date,
+           y = close_price)) + 
+  geom_line(col = 'grey2',
+            size = 0.75,
+            alpha = 0.8) +
+  scale_x_date(date_labels = ("%b %y"),
+               date_breaks = "6 month") +
+  scale_y_continuous(expand = c(0, 0), 
+                     breaks = seq(0, 65000, 
+                                  by = 5000)) +
+  expand_limits(y = c(0, 65000)) +
+  geom_vline(aes(xintercept = as.numeric(ymd("2022-03-04")), 
+                 linetype = "Terra Luna Collapse"), 
+             color = "blue3", 
+             size = 1) +  
+  geom_vline(aes(xintercept = as.numeric(ymd("2022-10-01")), 
+                 linetype = "FTX Collapse"), 
+             color = "green3", 
+             size = 1) + 
+  geom_vline(aes(xintercept = as.numeric(ymd("2017-12-20")), 
+                 linetype = "Start of Bear Cycle"), 
+             color = "red3", 
+             size = 1) +
+  geom_vline(aes(xintercept = as.numeric(ymd("2021-10-20")), 
+                 linetype = "Start of Bear Cycle"), 
+             color = "red3", 
+             size = 1) +
+  labs(title = "BTC Price (USD)", 
+       x = "Date (Month and Year)", 
+       y = "Price (USD)") +
+  scale_linetype_manual(name = "Legend", 
+                        values = c("Terra Luna Collapse" = "solid", 
+                                   "FTX Collapse" = "solid", 
+                                   "Start of Bear Cycle" = "solid"),
+                        labels = c("Terra Luna Collapse", 
+                                   "FTX Collapse", 
+                                   "Start of Bear Cycle"),
+                        breaks = c("Terra Luna Collapse", 
+                                   "FTX Collapse", 
+                                   "Start of Bear Cycle"),
+                        guide = guide_legend(override.aes = list(color = c("blue3", 
+                                                                           "green3", 
+                                                                           "red3")))) +
+  theme(legend.position = "bottom") +
+  theme(legend.title = element_blank())
+```
+<br>
+<br>
+
+ <p style="font-family:courier;">
+  Which shows the negative impact that black swan events, bad actors, and bear markets have on prices. We can see how after each one of these events began, the price of BTC dropped significantly. Note we did not log the price in this graph because our intention is to show just how severe of an impact such events can have on price.
+  </p>
+  
+<br>
+
+<h3 style = "font-size:30px; color: gold;">
+  <left>
+  *Conclusions & Opinions*
+  </left>
+</h3>
+
+  <p style="font-family:courier;">
+  In conclusion, the data clearly shows that BTC is becoming more and more popular over time. Since its inception in 2008 - 2009, Bitcoin has increased dramatically in price/MC, providing a way better ROI than any other asset, and has increased in the daily active wallet addresses (which can be used as a proxy for usage of BTC). Investors should thus be very interested in this asset. Further, the technology has been improved upon by other crypto projects, though BTC remains the "grandfather' crypto. Bitcoin and other cryptocurrencies are not going anywhere, I would even argue that they are the future of finance and a natural evolution of money in an increasingly digital world. The bad actors and scammers will get weeded out by official government bodies and the market will thrive if we reach the proper balance of decentralization and regulation. In fact, Sam Bankman Fried was just found guilty on all charges and faces a sentence of over 100 years in prison. Also, it is just a matter of time now until Blackrock's, and other large asset managing firms, spot ETF for BTC gets approval, bringing a lot more potential investors to the market. A spot ETF will allow investors exposure to BTC's price movement without them actually needing to hold the cryptocurrency itself, which is a large barrier for many potential investors. This and increasing regulation of the space will provide a sense of comfort to both institutional investors and retail investors, which will lead to a significant increase in the money flowing into the cryptocurrency market. This is just the beginning of crypto, we still have a long way to go and there is still much more money and technological advances to be made. This technology will be the next revolution in the financial markets.
+  </p>
+  
+<br>
+
+  <div style="text-align: right;">
+  Author: Ryan Denton
+  </div>
+  
+<br>
+  
+  
+ </left>
+</body>

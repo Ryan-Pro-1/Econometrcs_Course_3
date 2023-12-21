@@ -1,0 +1,176 @@
+---
+title: "HW 6 - EC 523"
+author: "Ryan Denton"
+date: "2023-11-06"
+output: 
+  prettydoc::html_pretty:
+    theme: HPSTR
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(comment = NA)
+
+```
+
+```{r echo=FALSE}
+#load packages
+library(prettydoc)
+library(pacman)
+p_load(tidyverse, ggplot2, readr, dplyr, stargazer, lubridate, sandwich, car)
+```
+
+$~$
+
+## **1. Bias in Resume Screening**
+
+$~$
+
+In class, we briefly discussed the challenge of using experiments to ask important questions where the "treatment" of interest is difficult to randomize. For example, is there gender or racial discrimination in hiring? How could we run an experiment to test this given that we cannot randomize an individuals gender or race?
+
+In "Are Emily and Greg More Employable Than Lakisha and Jamal? A Field Experiment on Labor Market Discrimination" Bertrand and Mullainathan (2004) solve this challenge by randomizing resume characteristics rather than individuals. Specifically, they generated fake resumes and randomly varied whether the name was identifiable as belonging to a man or a woman or a black or white person. They measure gender and racial discrimination by looking at the treatment effect of gender and race on call back rates.
+
+The data is in the given file. The treatment variables are defined by the sex and race variables. The main outcome of interest is the variable "call" which equals 1 if someone received a call back.
+
+
+#### *a. Is there evidence of  racial discrimination in resume screening in the data? (This answer should be based on an estimated causal effect.)*
+
+```{r}
+#read in data
+df = read.csv("BertrandMullainathan2004.csv")
+
+#transform data
+df = df %>%
+  mutate(sex = as.factor(ifelse(sex == "m", 1, 0)),
+         race = as.factor(ifelse(race == "w", 1, 0)))
+
+#now regress call on race and sex
+call_race_sex_mod_1 = lm(call ~ race + sex, data = df)
+
+#get robust SEs
+robust_se_1 = sqrt(diag(vcovHC(call_race_sex_mod_1,
+                             type = "HC1")))
+
+#pretty table
+stargazer(call_race_sex_mod_1,
+          se = list(robust_se_1),
+          dep.var.labels = "Call Back",
+          covariate.labels = c("White", "Male", "Black Female"),
+          keep.stat = c("n",
+                        "adj.rsq"),
+          type = "text",
+          style = "aer")
+
+```
+
+Yes, it does appear that there is evidence of racial discrimination in job screening. We see this in the coefficient on "White", which is 1 when the name was "identifiable as belonging to a white person". We see this coefficient is positive and indicates that having a "white name" increases the probability of getting a call back by about 3.2 percentage points on average, holding gender constant. 
+
+$~$
+
+#### *b. Is the amount of racial bias the same for men and women?*
+
+Note that the coefficient on "Male" is not significant and thus we cannot rule out that this coefficient is 0. Therefore, we cannot say that the amount of racial bias is different for men and women from this data. 
+
+$~$
+
+#### *c. The data includes a number of other resume characteristics. These are the baseline covariates in the data. These include the variables: education, ofjobs, yearsexp, honors, volunteer, military, empholes,  workinschool, email, computerskills, and specificskills. Pick 5 of these characteristics and discuss whether they are balanced across race categories.*
+
+```{r}
+#check if these are balanced: education, yearsexp, honors, volunteer, military
+
+
+#joint test for race
+df = df %>%
+  mutate(white = race == 1,
+         male = sex == 1)
+
+race_balance_check_mod = lm(white ~ education + yearsexp + honors + volunteer + military,
+                            data = df)
+
+race_robust_se = sqrt(diag(vcovHC(race_balance_check_mod,
+                                  type = "HC1")))
+
+#joint test for sex
+sex_balance_check_mod = lm(male ~ education + yearsexp + honors + volunteer + military,
+                           data = df)
+
+sex_robust_se = sqrt(diag(vcovHC(sex_balance_check_mod,
+                                  type = "HC1")))
+
+#put into table to check balance
+stargazer(race_balance_check_mod,
+          sex_balance_check_mod,
+          se = list(race_robust_se,
+                    sex_robust_se),
+          keep.stat = c("n",
+                        "adj.rsq"),
+          model.numbers = F,
+          type = "text",
+          style = "aer")
+
+#do linear hypothesis check
+linearHypothesis(race_balance_check_mod, c("education = 0",
+                                           "yearsexp = 0",
+                                           "honors = 0",
+                                           "volunteer = 0",
+                                           "military = 0"))
+
+linearHypothesis(sex_balance_check_mod, c("education = 0",
+                                           "yearsexp = 0",
+                                           "honors = 0",
+                                           "volunteer = 0",
+                                           "military = 0"))
+```
+
+It looks like, for the baseline characteristics I chose, that they seem balanced for race but not for sex since we can see there are only 5 controls here and 4 of them are statistically different from 0, implying sex is not balanced at baseline.
+
+$~$
+
+#### *d. How do the estimates from part a change if you control for these baseline characteristics when estimating the impact of race and gender on call back rates?*
+
+```{r}
+#run regression including these controls
+call_race_sex_mod_2 = lm(call ~ race + sex + education + yearsexp + honors + volunteer + military,
+                         data = df)
+robust_se_2 = sqrt(diag(vcovHC(call_race_sex_mod_2,
+                                   type = "HC1")))
+
+#now put both in a table to compare
+stargazer(call_race_sex_mod_1,
+          call_race_sex_mod_2,
+          se = list(robust_se_1,
+                    robust_se_2),
+          model.numbers = F,
+          covariate.labels = c("White",
+                               "Male",
+                               "Education",
+                               "Years of Exp.",
+                               "Honors",
+                               "Volunteer",
+                               "Military",
+                               "Black Female"),
+          keep.stat = c("n", "adj.rsq"),
+          type = "text",
+          style = "aer")
+```
+
+Notice the estimates do not change for the binary indicators for being white or male. But do notice the estimate for black females does change in a way that is significant (since the estimate with the controls is not included in the 95% CI of the estimate without the controls). This shows that we were over estimating the coefficient on "Black Female", our constant term, before including these controls. Further, we see that with these controls, black females are actually worse off than we estimated without the controls. Now we see that black females are even less likely to get a call back than our previous model implied.
+
+$~$
+
+#### *e. Look at the names used in the data for the resumes in each of the 4 gender/race categories. Could potential employers be inferring anything besides race and gender from the names? If so, how does this change your interpretation of the results?*
+
+Maybe if the employers are familiar with the frequencies of certain names within certain generations they could infer age, but I highly doubt that would be the case. Or maybe they could infer nationality based on the name because certain countries may have names are that more popular and frequent among black and white people. This could change the results if employers have bias in the sense that they prefer hiring people who share this nationality.
+
+$~$
+
+## **2. Impact of Dogs on Health**
+
+$~$
+
+#### *On several occasions, we have discussed the correlation between dog ownership and health. Propose a randomized experiment to test this. How might individuals in your experiment feel about your randomization? Could this create problems?*
+
+We could take a sample of people that are representative of the population. Then we could randomly split them into two groups and after ensuring both groups are comparable at baseline (especially in terms of overall health), and then randomly decide which group will get a dog and which will not. We would then track certain predetermined health indicators at certain time intervals over the course of a year or two. Then, at the end we would compare our findings across groups and control for the baseline variables to determine if dog ownership does indeed have a significant impact on health. 
+
+A problem could arise in the fact that some people may not like dogs and if they were assigned to have one for the experiment, this dislike could greatly bias our results since their perspective on it would be negative which would then manifest itself in potentially harmful effects on their health. On the other hand, people that love dogs may feel sad they won't be getting one if they are assigned to the no dog group, again this could cause negative feelings that may manifest into measurable effects on health. Both of these could indeed create problems and bias our results.

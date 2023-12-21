@@ -1,0 +1,283 @@
+---
+title: "HW 4 - EC 523"
+author: "Ryan Denton"
+date: "2023-10-24"
+output: 
+  prettydoc::html_pretty:
+    theme: HPSTR
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=FALSE}
+#load packages
+library(prettydoc)
+library(pacman)
+p_load(tidyverse, ggplot2, readr, dplyr, stargazer, lubridate)
+```
+
+$~$
+
+## **Question 1**
+
+$~$
+
+#### *a. True/False/Uncertain: P-values tell us the probability that the null hypothesis is true. Justify your answer.*
+
+False. P-values tell us the probability of observing the value that we observed in our analysis IF the null hypothesis is true. It does not tell us whether the null hypothesis is true or not, but can provide evidence in support or against the null hypothesis.
+
+$~$
+
+#### *b. True/False/Uncertain: A result is important if it is statistically significant. Justify your answer.*
+
+This depends on the context. It is not necessarily true that just because a result is statistically significant that it is important. We could find a result that is statistically significant given our analysis, but our null hypothesis is wrong and so when comparing to the incorrect null hypothesis value we get something that is statistically significant, but in reality it is not important because what we are using as our "anchor" is not correct. 
+
+Another example is even if our null hypothesis is indeed correct, if we take large enough samples then ANY difference from the hypothesized null value will be determined to be statistically significant, even if the result is not important given the context of the situation. For example, if some type of car gets 20 mpg and we think there is a fuel additive that will improve that and so we run a test with the null hypothesis that there is no change in mpg vs the alternative that there is an improvement. If the sample is large enough then even if the result is only a 0.05 increase in mpg, we would read that as statistically significant, making it sound important when it is not. 
+ 
+$~$
+
+## **Question 2**
+
+$~$
+
+#### *With elections coming up, there are many polls that are released in October and November. In this question, we will explore polling errors using a simulation. We will look at real polling errors in the next question.*
+
+$~$
+
+#### *a. Suppose that 53 percent of voters support candidate A over candidate B in an upcoming election (this is the true probability that a person supports A over B). This is unknown but we can learn about it by polling people about their preferences. Use a for loop and the rbinom() function to simulate 100 random samples of 100 people. Let the random draw equal 1 when candidate A is preferred to candidate B. What is the average value of support found across the different samples? What is the standard deviation of candidate A’s share of the vote across samples? Compare this standard deviation to sqrt(p(1 − p))/sqrt(N). (Hint: This is similar to the simulation we did in class during week 4.)*
+
+```{r}
+#set seed
+set.seed(123)
+
+#create empty matrix
+preferences_matrix_1 = matrix(NA,
+                              nrow = 100,
+                              ncol = 100)
+
+#use loop to propagate matrix
+for(i in 1:100){
+  preferences_matrix_1[i, ] = rbinom(100, 1, 0.53)
+}
+
+#find average level of support for A
+(avg_support_A_1 = mean(preferences_matrix_1))
+
+
+#find se of the mean of A's support:
+
+#create empty vector of the means from each sample
+avg_support_A_vector_1 = rep(NA, 100)
+
+for(i in 1:100){
+  avg_support_A_vector_1[i] = mean(preferences_matrix_1[i, ])
+}
+
+#now find the SE of the means
+(se_support_A_1 = sd(avg_support_A_vector_1))
+
+#compare to:
+sqrt(.53*(1-.53))/sqrt(100)
+
+```
+
+We can see the average level of support is about 0.5349 across these sample, with a standard error of about 0.044. When we compare the SE found to the formula given in the question, we see that the two values are very close.
+
+$~$
+
+#### *b. Repeat this simulation but assuming 75 percent of the population supports candidate A. Compare the standard deviation across the two simulations. What does this tell us about how the standard error of a poll varies with the competition of an election?*
+
+```{r}
+#create empty matrix
+preferences_matrix_2 = matrix(NA,
+                              nrow = 100,
+                              ncol = 100)
+
+#use loop to propagate matrix
+for(i in 1:100){
+  preferences_matrix_2[i, ] = rbinom(100, 1, 0.75)
+}
+
+#find average level of support for A
+(avg_support_A_2 = mean(preferences_matrix_2))
+
+#find se of the mean of A's support:
+
+#create empty vector of the means from each sample
+avg_support_A_vector_2 = rep(NA, 100)
+
+for(i in 1:100){
+  avg_support_A_vector_2[i] = mean(preferences_matrix_2[i, ])
+}
+
+#now find the SE of the means
+(se_support_A_2 = sd(avg_support_A_vector_2))
+
+#compare to:
+sqrt(.75*(1-.75))/sqrt(100)
+
+```
+
+Again we find that the mean is indeed very close to being the actual mean as we defined it to be. Further, we again notice that the standard error of the means is withing 0.01 of what the formula tells us it should be (so very close with this one as well). The standard errors between these samples are comparable, only having a difference of about 0.0054. So the SE stays relatively the same when the support for A is greater than that for B by a few percentage points and by even as much as 50 percentage points when the sample sizes remain the same and the number of samples remains the same.
+
+$~$
+
+#### *c.  Repeat the simulation in part a but assuming the polls have 1,000 people instead of 100 people (but continuing to assume 53 percent of people support candidate A). Compare the standard deviation in this simulation to the standard deviation in part a. What does this tell us about how the standard error of a poll varies with the sample size of the poll?*
+
+```{r}
+#create empty matrix
+preferences_matrix_3 = matrix(NA,
+                              nrow = 100,
+                              ncol = 1000)
+
+#use loop to propagate matrix
+for(i in 1:100){
+  preferences_matrix_3[i, ] = rbinom(1000, 1, 0.53)
+}
+
+#find average level of support for A
+(avg_support_A_3 = mean(preferences_matrix_3))
+
+
+#find se of the mean of A's support:
+
+#create empty vector of the means from each sample
+avg_support_A_vector_3 = rep(NA, 100)
+
+for(i in 1:100){
+  avg_support_A_vector_3[i] = mean(preferences_matrix_3[i, ])
+}
+
+#now find the SE of the means
+(se_support_A_3 = sd(avg_support_A_vector_3))
+
+#compare to:
+se_support_A_1
+```
+
+Now notice that the SE has dropped by about 0.0284. This is due to the more precision in our estimates from the larger amount of people in our samples. Thus, larger samples gives us more precise estimates and lower standard errors. Note we also see the estimate being closer to the 0.53 we know it should be.
+
+$~$
+
+## **Question 3**
+
+$~$
+
+#### *a. First, we will clean up the polling data. Make the indicated changes.*
+
+```{r}
+#load in data
+president_polls_df = read_csv("president_polls_historical.csv")
+
+#Make the changes as directed in HW and create new df
+Biden_2020_Oct_Nov_polls_df = president_polls_df %>%
+  mutate(end_date = as.Date(end_date),
+         month_of_end_date = month(end_date),
+         state = toupper(state)) %>%
+  filter(candidate_name == "Joe Biden",
+         cycle == 2020,
+         month_of_end_date == c(10, 11))
+```
+
+$~$
+
+#### *b. Next, we will clean up the results data. Make the indicated changes.*
+
+```{r}
+#load in results data
+president_RESULTS_df = read_csv("1976-2020-president.csv")
+
+#Make the changes
+Biden_2020_RESULTS_df = president_RESULTS_df %>%
+  filter(candidate == "BIDEN, JOSEPH R. JR",
+         year == 2020) %>%
+  mutate(share_of_votes = round(candidatevotes/totalvotes, 4)*100)
+  
+#Use the sum() function to check the share of votes across all states that Joe Biden received.
+national_share_votes = 100*round((sum(Biden_2020_RESULTS_df$candidatevotes))/(sum(Biden_2020_RESULTS_df$totalvotes)), 4)
+
+```
+
+We have made the required adjustments to the data as well as seen that Biden received about 51.26% of votes across all the states.
+
+$~$
+
+#### *c. Now, we will merge the two datasets together by state using a left_join(). Make the following changes to the merged dataset:*
+
+```{r}
+#merge the two datasets by state:
+Biden_2020_COMBINED_df = left_join(Biden_2020_Oct_Nov_polls_df,
+                                   Biden_2020_RESULTS_df,
+                                   by = "state")
+
+#clean the dataset as instructed
+
+#first replace the share of votes for national polls
+Biden_2020_COMBINED_df = Biden_2020_COMBINED_df %>%
+  mutate(share_of_votes = ifelse(is.na(state)==1,
+                                 national_share_votes,
+                                 share_of_votes))
+
+#now create a new column that is the difference of the "pct"variable that indicates what the polls predicted the share of Biden votes would be and what the actual total share was
+Biden_2020_COMBINED_df = Biden_2020_COMBINED_df %>%
+  mutate(share_poll_error = pct - share_of_votes)
+```
+
+$~$
+
+#### *d. Make a figure plotting the absolute value of the error against 1/sqrt(sample size). Include a geom_smooth(). Comment on the relationship.*
+
+```{r}
+ggplot(data = Biden_2020_COMBINED_df,
+       aes(x = 1/sqrt(sample_size),
+           y = abs(share_poll_error))) +
+  labs(title = "Poll Errors VS 1/sqrt(Sample Size)",
+       x = "1/sqrt(Sample Size)",
+       y = "Absolute Value of the Difference (As %)") +
+  scale_x_continuous(breaks = seq(0.01, 0.045, by = .005)) +
+  scale_y_continuous(breaks = seq(0, 11, by = 1),
+                     expand = c(0,0),
+                     limits = c(0, 10)) +
+  geom_point(col = 'purple4') +
+  geom_smooth(method = 'lm', se = F)
+```
+
+We can see the trendline is positively sloped. As the x-axis increases, this means the sample size is decreasing since the sample size shows up in the denominator. This shows that the absolute value of the error increases as the sample size decreases, which is what we should expect since there is less information and more noise with smaller samples.
+
+$~$
+
+#### *e. Using only state polls, make a figure plotting the absolute value of the error against Biden’s actual vote share. Include a geom_smooth(). Comment on the relationship. Is this consistent with what you expected given your answer in part 2.c? What might explain this?*
+
+```{r}
+#create new df with only state polls
+Biden_STATE_POLLS_2020_DF = Biden_2020_COMBINED_df %>%
+  filter(is.na(state) == 0)
+
+#make the plot
+ggplot(data = Biden_STATE_POLLS_2020_DF,
+       aes(x = share_of_votes,
+           y = abs(share_poll_error))) +
+  labs(title = "State Poll Errors VS State Share of Biden Votes",
+       x = "Share of Biden Votes (At State Level and As %)",
+       y = "Absolute Value of the Difference (As %)") +
+  scale_x_continuous(breaks = seq(40, 65, by = 2)) +
+  scale_y_continuous(breaks = seq(0, 8.5, by = 0.5),
+                     expand = c(0,0),
+                     limits = c(0, 8.5)) +
+  geom_point(col = 'green4') +
+  geom_smooth(method = 'lm', se = F)
+```
+
+We see here also a positively sloped trendline, so as the vote share for Biden increases we would expect to see a higher error in the state predicted vs the actual share of votes for Biden. But do note this dataset only has 53 observations and thus we are more likely to see outliers, which appears to be the case in the dataset here.
+
+I am not really sure how this relates to 2c when we found that the larger the sample size is the smaller the SE, since here we are looking at the shares of votes and those do not tell us about the sample size. I must be missing something with this question and if you have time I would appreciate if you could enlighten me about what I am missing here :)
+
+
+
+
+
+
+

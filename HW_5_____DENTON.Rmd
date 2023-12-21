@@ -1,0 +1,160 @@
+---
+title: "HW 5 - EC 523"
+author: "Ryan Denton"
+date: "2023-11-01"
+output: 
+  prettydoc::html_pretty:
+    theme: HPSTR
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=FALSE}
+#load packages
+library(prettydoc)
+library(pacman)
+p_load(tidyverse, ggplot2, readr, dplyr, stargazer, lubridate, sandwich)
+```
+
+$~$
+
+## **1. Signing Omitted Variable Bias**
+
+$~$
+
+#### *a. Suppose people start drinking diet soda when they find out they have diabetes. How will this bias estimates of the effect of diet soda consumption on health?*
+
+This would bias the estimates downward because now you will have unhealthy people drinking diet soda because they are unhealthy.
+
+$~$
+
+#### *b. Suppose a researcher does not control for parent education in a regression of earnings on years of education. Will the resulting bias likely be positive or negative?*
+
+Positive because the estimate for the effect that years of education for the child has on earning will "capture" some of the effect of the parent's education on earnings. 
+
+$~$
+
+#### *c. Suppose doctor’s advise individuals with severe anxiety or depression to buy a dog. Would failing to control for this create positive or negative omitted variable bias if looking at the relationship between pet ownership and health?*
+
+Negative OVB because now you will have a lot more people with anxiety and depression making up the proportion of dog owners. People with these conditions tend to have worse health than those without so this will drag down the estimates of dog ownership on health when you do not control for these.
+
+$~$
+
+#### *d. What has to be true for an omitted variable to bias the returns to schooling downward? Can you think of an example of a variable meeting these criteria? Why is it difficult to think of one?*
+
+It has to have a positive relationship with returns to schooling and a negative relationship with schooling (or vice versa). It is hard to think of one because most things that positively effect schooling will also positively effect returns to schooling and the same holds for negative effects, I cannot think of any variables for this.
+
+$~$
+
+## **2. Testing the Conditional Independence Assumption**
+
+$~$
+
+For this exercise, we will simulate the following data generating process:
+
+$$Y_i = 2+3T_i+ \varepsilon_i$$
+
+Where:
+
+$$\varepsilon_i = -5 \mu_i + e_i$$
+
+$$P(T_i=1) = 0.5 \mu_i + u_i  $$
+
+$$\mu_i \sim Uniform(0.4,0.6)$$
+$$u_i \sim Uniform(0,0.3) $$
+$$e_i \sim \mathcal{N}(0,1) $$
+$~$
+
+#### *a. Is there a confounder we should be worried about in a regression of Y on T?*
+
+Yes. This is because, from the information given, we can see that $\mu$ is correlated with the $T$ (since the probability $T_i = 1$ is dependent on $\mu_i$) and we see that $\mu$ is correlated with $Y$ through the error term in the data generating process. 
+$~$
+
+#### *b. Generate a dataset with 1,000 observations from this data generating process.*
+
+```{r}
+#set seed
+set.seed(453)
+
+#create empty vectors
+dep_var_Y = rep(NA, 1000)
+
+epsilon = rep(NA, 1000)
+
+indep_var_T = rep(NA, 1000)
+
+#propagate the empty dataset
+for(i in 1:1000){
+  epsilon[i] = -5*runif(1, 0.4, .6) + rnorm(1, 0, 1)
+  indep_var_T[i] = rbinom(1, 1, 0.5*runif(1, 0.4, .6) + runif(1, 0, 0.3))
+  dep_var_Y[i] = 2 + 3*indep_var_T[i] + epsilon[i]
+}
+
+df = as.data.frame(dep_var_Y)
+
+```
+
+$~$
+
+#### *c. Use the `cov()` command to estimate  $\hat{Cov}(T_i,\varepsilon_i)$  in your simulated data.*
+
+```{r}
+cov(indep_var_T, epsilon)
+```
+
+$~$
+
+#### *d. Now, regress Y on T. Report the results in a nice table. Briefly interpret the results.*
+
+```{r}
+#create model
+lm_Y_on_T = lm(dep_var_Y ~ indep_var_T, data = df)
+
+#create robust SEs
+robust_se = sqrt(diag(vcovHC(lm_Y_on_T,
+                             type = "HC1")))
+
+#create pretty table to report results (using robust SEs)
+stargazer(lm_Y_on_T,
+          se = list(robust_se),
+          covariate.labels = c("T", "Constant"),
+          dep.var.labels = "Y",
+          keep.stat = c("n", "adj.rsq"),
+          type = 'text')
+```
+
+We can see that our coefficient is very close to what we would expect it to be, which is 3, but the constant is WAY off of the value we would expect, which is 2, (I may have done something wrong though, so if I did please let me know what that is!!). 
+
+Both the constant and the coefficient on $T$ are statistically significant at the 1% level. With each one unit increase in $T$ we would expect an increase in $Y$ of about 2.94 units of $Y$, on average and all else equal. 
+
+$~$
+
+#### *e. We saw in class that we can interpret the coefficient from a regression as the causal effect of $T$ on $Y$ if the conditional independence assumption is satisfied, i.e. if $Cov(\varepsilon_i,T_i)=0$. Calculate the residuals from your regression of $Y$ on $T$ using the fitted values saved in your regression output (e.g. `m1$fitted`). What is the covariance between the estimated residuals and $T_i$? Does this suggest there are any confounders? How does this compare to the true covariance between $T_i$ and $\varepsilon_i$? Why does this make it difficult to test the conditional independence assumption?*
+
+```{r}
+#calculate the estimated residuals
+estimated_resids = lm_Y_on_T$fitted.values - dep_var_Y
+
+#covar between these estimated resids and T
+cov(estimated_resids, indep_var_T)
+```
+
+Notice the covariance between the estimated residuals and $T_i$ is about $0$, versus what we found the covariance between $T_i$ and $\epsilon_i$ (which was about $-0.015$). No, I wouldn't say we should be worried too much about confounders here.
+
+It is hard to test the CIA because even though the actual covariance between the error term and the independent term is slightly negative, but almost 0. We see that when we actually fitted the model the covariance between the error in our model (the fitted values minus the dependent Y values we generated) is virtually 0, but not the same as the actual covariance so there must be something else that we are missing.
+
+$~$
+
+## **3. Evaluating causal claims**
+
+$~$
+
+#### *Find an article (wherever is convenient to look - causal claims are everywhere!) that makes a causal claim. Assess whether the implied causal effect may suffer from omitted variable bias.*
+
+I found the following article: https://www.cnn.com/cnn-underscored/health-fitness/apollo-stress-relief-bracelet-sale-benefits-2023-09-27
+
+They seem to be claiming that wearing this device will cause your stress levels to decrease. Yes, I do think it suffers from OVB. Income if of course the obvious one, the device costs about $300! Anyone that can afford the extra money to spend on such a device is probably making more money than the average person. Another one is being mindful of your health. People who are more mindful of their health will self-select into purchasing one of these and this will bias the results.
+

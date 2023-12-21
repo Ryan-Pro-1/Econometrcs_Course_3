@@ -1,0 +1,159 @@
+---
+title: "Final - EC 523"
+author: "Ryan Denton"
+date: "2023-12-04"
+output: 
+  prettydoc::html_pretty:
+    theme: HPSTR
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(comment = NA)
+
+```
+
+```{r echo=FALSE}
+#load packages
+library(prettydoc)
+library(pacman)
+p_load(tidyverse, ggplot2, readr, dplyr, stargazer, lubridate, sandwich, car, AER, fixest)
+```
+
+## **1. Short Response.**
+
+<br>
+
+*Comment on the accuracy of chatGPT's response to my question below*
+
+The first sentence explains it well enough, though it should clarify that this is only for if the null hypothesis is true. Statistical significance at the 5% level means that there is only about a 5% chance of observing the results you observed IF the null hypothesis is indeed correct. So yes, the data are unlikely to have occurred by chance if the null is true. The second sentence isn't correct though. This does not mean that there is a 95% chance that you will observe something similar if you ran a similar study. If the null is indeed true then the chances you saw something similar would still be about 5%, if the null is false then we would need more information in order to properly estimate the probability of seeing the results we did see. I feel like the second sentence is getting a mix of confidence interval logic in there, which is not correct. So I agree with the first sentence (though it should be clear about this only being if the null is indeed true) but not the second sentence. 
+
+<br>
+
+## **2. Developing a Research Design**
+
+<br>
+
+#### *Imagine you have been hired as an economist at openAI, the company that runs chatGPT. Congratulations! They currently allow users to use chatGPT 3 for free, but charge $20 per month for a subscription to use their more advanced chatGPT 4 platform. They would like to learn more about how much to charge for their premium subscription in order to maximize their profit. Propose a research design to help openAI determine the profit maximizing price for their subscription. What are the benefits and limitations of your proposed design?*
+
+Lets keep in mind that a quick google search resulted in the answer that there are 100+ million people around the world that use chatGPT, so our sample sizes being large enough will be no problem at all. Also note I may refer to chatGPT-3 as simply "chat-3" and similarly I may refer to chatGPT-4 as simply "chat-4".
+
+What comes to my mind would be to first look at the country level wherever chatGPT is actively used (which I assume is in virtually every country). Note that for this question we will use USD value when talking about the prices. Then within each country we would randomly select chatGPT-3 users into 3 groups with 1,000 individuals in each group total: a group that is offered chatGPT-4 for \$5 a month, a group offered it for \$10 a month, and a group offered it for \$15 a month. Next, we would break up the current people that are paying $20 a month already for chatGPT-4 into groups based on their geographical location, then within each of those locations we would randomly select them into 4 groups with 1,000 individuals in each group total: one group that simply continues paying \$20 a month and is unaware (hopefully) of this experiment, one group that is told their subscription will now cost \$25 a month if they wish to continue, one group that is told their subscription will now cost \$30 a month if they wish to continue, and one group that is told their subscription will now cost \$35 a month if they wish to continue. We will use \$20,000 profit as our base, since 1,000 people paying \$20 a month for the service would be \$20,000 (this is what we will be comparing to). All this randomization should give us good representative samples for the users around the world. 
+
+How the individuals respond to this would shed light on the willingness to pay for such a service and would help determine the profit maximizing price for the subscription. Of course we could do smaller increments in price, but the idea here is what is most important. Also keep in mind that if, for example, 400 out of the 1,000 chatGPT-3 users that were offered chatGPT-4 at \$10 month signed up then that would also mean that they would be willing to pay \$5 for the service AND we would also need to add in the 1,000 that are already paying /$20 for the service in order to get the correct value to compare to \$20,000. Further, this logic holds for any of the treatment groups whose treatment value is greater than any of the other treatment values (or greater than \$20 for the 3 groups above the \$20 subscription), so we would need to add the ones willing to pay a higher price to the numbers of those willing to pay a lower price.
+
+A couple examples/scenarios might help clarify what I mean. 
+
+Consider the outcome in which 200 of the chat-3 users offered chat-4 at \$5 signed up, 200 of the chat-3 users offered chat-4 at \$10 signed up, 600 of the chat-3 users offered chat-4 at \$15 signed up, 1000 that keep paying \$20 a month for chat-4, 200 of the chat-4 users told their price increases to \$25 keep the service, 100 of the chat-4 users told their price increases to \$30 keep the service, and 50 of the chat-4 users told that their price increases to \$35 keep their service. Then to find the estimated profits for the \$5 a month plan, we would add everyone willing to pay for the service in each group (since \$5 is the lowest and so if a person is willing to pay \$10 or \$20 then of course they would be willing to pay \$5) then multiply that by \$5, doing this gives us \$11,750. Then for the \$10 service group, we would just subtract 200 from the total number of people willing to pay for the \$5 (since they 200 in the \$5 group is no included in the \$10 group) and multiply that by \$10 to get \$21,500. Following this same logic all the way through we would get \$29,250 for the \$15 group, \$7,750 for the \$25 group, \$4,500 for the \$30 group, and \$1,750 for the \$35 group. So if this were indeed the data we observed, we would want to think about switching the service price to \$15 a month rather than \$20 since 29250 > 20000. 
+
+For another example outcome, consider if we observed that none of the chat-3 users offered any of the three different amounts signed up for the service, all 1000 of the chat-4 users told their price was going to increase to \$25 a month continued the service at that price, and none of the chat-4 users in the other two groups continued their service. Then we would want to switch the service price to \$25 since 25000>20000.
+
+The benefits of this design are: it is easy to implement and track, provides useful information on people's willingness to pay for such a service, and could help future pricing strategies at the company.
+
+Some limitations are: if participants of two different groups talked to each other about the differences in pricing this could harm the validity of the experiment, for the current chat-4 groups that were told their price would increase we would risk losing them as customers and they may not return for awhile or they may even go to competitors, and the price increments I chose may be too large and with so much data available for OpenAI to use we may want to do more groups with smaller differences in pricing. 
+
+<br>
+
+## **3. Data Visualization**
+
+<br>
+
+*Comment on the strengths and weaknesses of the given graph from Bloomberg.*
+
+**Strengths:** It is not a line graph so the fact it includes 0 on the vertical axis is good. The different colors help distinguish between the different types of power generation. The intervals on both the vertical axis and the horizontal axis are consistent. There is good labeling to indicate what axis is what and what the idea being portrayed is. 
+
+**Weaknesses:** I feel like there is too much information trying to be presented in this single graph. Though they have the differences in color to indicate the different types of power generation, the fact that they are piling 9 types into one single year for each of the years listed makes it hard for me to really see what is going on. Also, thinking about negative growth can be unintuitive so I would suggest maybe a line graph to represent this information rather than a bar graph, that way if the growth is worse than the previous year we could easily identify that as a downtrend on a line graph. 
+
+<br>
+
+## **4. Fertility and Women's Labor Market Outcomes**
+
+<br>
+
+#### *a. Explain using terminology from this class why  a regression of labor market outcomes on number of children is likely biased.*
+
+There would be confounders that would lead to omitted variable bias if we were to run such a regression. One confounder we could think of is the income of the partner because if your partner makes a lot of money, for example, then you are more likely to have more children and your labor market outcomes would be affected since you may choose to stay home and work less if your partner makes enough money. That is just one example of why such a simple regression is likely to be biased, there are many other variables that we would want to control for as well.
+
+<br>
+
+#### *b. Using their data, estimate the first-stage relationship between the decision to have three or more kids and having two same gender kids, controlling for other baseline characteristics. Present the results in a nicely formatted and labeled table. Comment on whether having two same gender kids is a relevant instrument for having 3 or more kids.*
+
+```{r results='asis'}
+#load data
+df = read_csv("angev80.csv")
+
+#first stage relationship between having 3 or more kids and having 2 kids of the same gender, with controls
+first_stage = lm(morekids ~ samesex + agem1 + blackm + hispm + othracem + incomem + incomed,
+                 data = df)
+
+#get robust SEs
+robust_se = sqrt(diag(vcovHC(first_stage,
+                             type = "HC1")))
+
+#present results in a table with only the interested covariate shown
+stargazer(first_stage,
+          se = list(robust_se),
+          keep = "samesex",
+          dep.var.labels = "3 or More Kids",
+          covariate.labels = "First 2 Kids Same Gender",
+          keep.stat = c("n",
+                        "adj.rsq"),
+          type = "html",
+          style = "ajps",
+          omit.table.layout = "n")
+```
+
+Notice the coefficient on the "samesex" indicator, which tells us that if your first two kids are of the same gender then there the chances you have a third kid increase by about 6.2 percetnage points. This coefficient is also significant at the 1% level, so we are very unlikely to have seen this by chance. So we notice that "samesex" is indeed correlated with "morekids" so it is a "relevant" IV, though the effect is not very large and the adjusted r-squared value is very small so we may be concerned about that.
+
+<br>
+
+#### *c. Using samesex as an instrument for morekids, what is the impact of having three or more kids on women's labor market outcomes? Create a nicely formatted and labeled table showing estimates to support your answer.*
+
+Note: for the labor market outcome we will be using the hours worked by the mother as out outcome variable. This is because, as the title of the paper suggests, we are interested in how the supply of female labor is affected due to having more children. Further, we will assume that the description of the variable "hourswm" is in hours worked per week since it does not specify exactly. We will also run two other iv regs with whether the mom worked or not as an outcome and the mothers income as an outcome and present all three in a table.
+
+```{r results='asis'}
+#run model using samesex as instrument for morekids, using whether or not mom worked as the labor market outcome
+iv_reg_workedm = ivreg(workedm ~ morekids | samesex,
+                       data = df)
+
+#run model using samesex as instrument for morekids, using mom's weekly hours worked as the labor market outcome
+iv_reg_hourswm = ivreg(hourswm ~ morekids | samesex,
+                       data = df)
+
+#run model using samesex as instrument for morekids, using mom's income as the labor market outcome
+iv_reg_incomem = ivreg(incomem ~ morekids | samesex,
+                       data = df)
+
+stargazer(iv_reg_workedm, iv_reg_hourswm, iv_reg_incomem,
+          dep.var.labels = c("Worked?", "Weekly Hours Worked", "Income"),
+          covariate.labels = c("3 or More Kids", "Less Than 3 Kids"),
+          keep.stat = c("n",
+                        "adj.rsq"),
+          type = "html",
+          style = "ajps",
+          omit.table.layout = "n")
+
+```
+
+It appears that more children will have a negative impact on the labor market outcomes for woman that have more children, which makes sense intuitively.
+
+<br>
+
+#### *d. Comment on the interpretation of the IV estimate(s) in part c.*
+
+From the table in part c, we can see that a if a mother has 3 or more kids then there is a 13.2 percentage point decrease in the probability that they work. This estimate is significant at the 1% level.
+
+Further, we can see that we would expect a mother that has 3 or more children would work about 5 hours a week less than mothers with less than 3 children. Note the estimate is indeed significant at the 1% level also.
+
+Next we see that women that have 3 or more children earn about 1,042 less than women with less than 3 children on average. Again this estimate is significant at the 1% level.
+
+In conclusion, we can confirm our intuition that mothers that have more children will not work at all more often, work less which lowers the female labor supply, and will earn less with the more children they have.
+
+<br>
+
+#### *e. Why might samesex not be a valid instrument for morekids? Be sure to specifically reference what assumptions are violated and why.*
+
+Though we determined that samesex may indeed be a relevant instrument due to the significant relationship with morekids, there are reasons to believe that it may not be a valid instrument. If we think about the exclusion restriction, having two kids of the same sex will impact all of the labor market outcomes for the mother by themselves and not just "through" the morekids variable. Meaning the exclusion restriction is not satisfied. Further, this variable also does not satisfy the monotonicity assumption because if you have two kids already, even if they are the same gender, this may make some people want to go for a third kids and may make others say "NO MORE KIDS!". 
+
+

@@ -1,0 +1,315 @@
+---
+title: "EC 523 - HW 2 "
+author: "Ryan Denton"
+date: "2023-10-06"
+output: 
+  prettydoc::html_pretty:
+    theme: HPSTR
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## **1. The Shape of the Returns to Schooling**
+
+$~$
+
+```{r echo=FALSE}
+library(pacman)
+p_load(tidyverse, ggplot2, readr, dplyr, stargazer)
+```
+
+```{r}
+nlsy79 = read_csv("nlsy79.csv")
+```
+
+$~$
+
+#### *a. Regress earnings on years of education. How much do earnings increase on average for every additional year of schooling?*
+
+$~$
+
+```{r}
+#create model
+earn_educ_lm = lm(earn2009 ~ hgc,
+                  data = nlsy79)
+
+#put in pretty table
+stargazer(earn_educ_lm,
+          covariate.labels = c("Highest Grade Completed"),
+          dep.var.labels = c("Earnings in 2009"),
+          keep.stat = c('n', "adj.rsq"),
+          type = 'text')
+```
+
+Based upon this model it tells us that for each additional year of education we would expect an increase of about \$9,949 in earnings, all else equal. But, note the low adjusted R-squared value, telling us this model is not doing a very go job at explaining the variation in earnings. 
+
+$~$
+
+#### *b. Use ggplot2 to plot the conditional expectation of earnings with respect to years of education? Do you think it is reasonable to assume earnings increase linearly with years of schooling?*
+
+$~$
+
+```{r}
+#create graph as instructed
+ggplot(data = nlsy79,
+       aes(x = hgc,
+           y = earn2009)) +
+  stat_summary(geom = "point",
+               fun = "mean",
+               col = 'red4') +
+  labs(title = "Earnings & Education",
+      x = "Highest Grade Completed",
+      y = "Earnings (2009)") +
+  scale_x_continuous(breaks = seq(0, 20, by = 2)) +
+  theme_bw()
+```
+
+No, based on this graph I would not assume that earnings increase linearly with years of schooling over the entire range. A line looks like it might describe the relationship reasonably well from about 6 years of education to 16 years, but all together a line could not fit this data well. 
+
+$~$
+
+#### *c. Generate a variable that equals years of education squared. Regress earnings on years of education and years of education squared. How much do earnings increase for someone who gets 10 instead of 9 years of schooling? What about someone who gets 17 instead of 16*
+
+$~$
+
+```{r}
+#add new column to dataset
+nlsy79 = nlsy79 %>%
+  mutate(hgc_sqrd = hgc^2)
+
+#create model
+earn_educ_educ.sqrd_lm = lm(earn2009 ~ hgc + hgc_sqrd, 
+                            data = nlsy79)
+
+#put in pretty table
+stargazer(earn_educ_educ.sqrd_lm,
+          covariate.labels = c("Highest Grade Completed", "Highest Grade Completed Squared"),
+          dep.var.labels = c("Earnings in 2009"),
+          keep.stat = c('n', "adj.rsq"),
+          type = 'text')
+```
+
+To answer the questions we can plug in $hgc = 9$ and $hgc = 10$, then subtract the value for 9 years of education from 10 years to see what our model predicts the difference will be:
+$$Earnings_{10} - Earnings_9 = 47122.71 - 9711.773(10) + 719.434(10)^2 - 47122.71 + 9711.773(9) - 719.434(9)^2 = 3957.903$$
+$~$
+
+Then for the earnings increase for someone who gets 17 years of education vs someone with 16,  do the same thing but for $hgc = 16$ and $hgc = 17$:
+$$Earnings_{17} - Earnings_{16} = 47122.71 - 9711.773(17) + 719.434(17)^2 - 47122.71 + 9711.773(16) - 719.434(16)^2 = 14030.28$$
+
+$~$
+
+Thus, we see that the earnings increase from 9 years of education to 10 is about \$3,957.90 and the earnings increase from 16 years to 17 years of education is about \$14,030.28. This provides further support for this relationship being non-linear.
+
+$~$
+
+#### *d. Code years of education as a factor. Now regress earnings on years of education. Comment on the results.*
+
+$~$
+
+```{r}
+#recode hgc so it is a factor instead of a numerical value
+nlsy79 = nlsy79 %>%
+  mutate(hgc = as.factor(hgc))
+
+#regress earning on hgc
+earn_hgc.factor_lm = lm(earn2009 ~ hgc, 
+                        data = nlsy79)
+
+#put in pretty table
+stargazer(earn_hgc.factor_lm,
+          dep.var.labels = c("Earnings in 2009"),
+          keep.stat = c('n', "adj.rsq"),
+          type = 'text')
+```
+
+Now each level is an indicator variable, with the base level being 0 years of education (represented by the constant value). For every level where these is data, we are given an indicator variable that and a coefficient for that level, which is the difference in earnings between the base level and the level we are looking at. Each of these independent variables in the table will be either 0 or 1 for each observation (0 = "no", 1 = "yes"). For example, our model here tells us that someone with 20 years of education would be expected to earn about \$152,428 more on an annual basis than someone with 0 years of experience. Notice that most of the estimates are not statistically significant in terms of being different than 0, so we wouldn't be too confident in those ones anyways. Further, 0 years of education is very rare in the US and the lower levels of education are also, we would want to transform this data like we did in the previous homework to get more meaningful results.
+
+$~$
+
+#### *e. Do your answers to this question make you more or less worried about the linearity of linear regression?*
+
+This makes me more worried about a linear relationship predicting everything that we may come across, without transformations made to the model, in terms of describing the relationship between variables. But, we can keep the linearity part of the assumptions we are making and also make transformations to the model so that it fits the relationship better, so overall I am not worried about it. 
+
+$~$
+
+## **2. Indicators and Interactions** 
+
+$~$
+
+### *a. Regress the natural logarithm of earnings on an indicator variable for being male. How do the estimates relate to the average log earnings of men and women?*
+
+$~$
+
+```{r}
+#create new column of indicators of sex
+nlsy79 = nlsy79 %>%
+  mutate(male = ifelse(sex == "MALE", 1, 0),
+         female = ifelse(sex == "FEMALE", 1, 0))
+
+#since we are taking the log of earnings, lets just add 1 to all earnings in the data to ensure no errors.
+nlsy79 = nlsy79 %>%
+  mutate(earn2009 = earn2009 + 1)
+
+#regress log earnings on indicator variable for being male 
+earn_log_gender_male_lm = lm(log(earn2009) ~ male,
+                        data = nlsy79)
+
+#put in pretty table
+stargazer(earn_log_gender_male_lm,
+          covariate.labels = c("Male"),
+          dep.var.labels = c("Log Earnings in 2009"),
+          keep.stat = c('n', "adj.rsq"),
+          type = 'text')
+
+```
+
+These estimates relate to the average log earnings of men and women by telling us what our model predicts their average earning will be. The constant in this case is the predicted average earnings of females and the coefficient on the male indicator variable is the average difference in log earnings between females and males that our model predicts.
+
+$~$
+
+#### *b. Regress log earnings on years of education and an indicator for being male. Next, regress log earnings on years of education and an indicator for being female. Compare the estimated returns to education from both specifications. What do you notice?*
+
+$~$
+
+```{r}
+#regress log earnings on education and indicator variable for being male 
+earn_log_educ_gender_male_lm = lm(log(earn2009) ~ hgc + male,
+                                  data = nlsy79)
+
+#regress log earnings on education and indicator variable for being female 
+earn_log_educ_gender_FEMALE_lm = lm(log(earn2009) ~ hgc + female,
+                                    data = nlsy79)
+
+#put in pretty table
+stargazer(earn_log_educ_gender_male_lm, earn_log_educ_gender_FEMALE_lm,
+          dep.var.labels = c("Log Earnings in 2009"),
+          column.labels = c("male", "female"),
+          keep.stat = c('n', "adj.rsq"),
+          type = 'text')
+```
+
+Notice how the coefficient on male for the model with the male indicator variable is the same as the coefficient on female in the model with the female indicator variable in absolute value and they both have the same standard error. So this indicates a wage premium for being a male. Further, the coefficients for the years of education completed are all the same as well with the same standard errors.
+
+$~$
+
+#### *c. Regress log earnings on years of education separately for the samples of men and women. Compare these estimates to what you found in part a of this question.*
+
+$~$
+
+```{r}
+#create male only sample
+male_sample = nlsy79 %>%
+  filter(male == TRUE)
+
+#regress log earning of education for males
+log_earn__educ_males = lm(log(earn2009) ~ hgc,
+                          data = male_sample)
+
+#create female only sample
+female_sample = nlsy79 %>%
+  filter(male == FALSE)
+
+#regress log earning of education for females
+log_earn__educ_FEmales = lm(log(earn2009) ~ hgc,
+                            data = female_sample)
+
+#put in pretty table
+stargazer(log_earn__educ_males, log_earn__educ_FEmales,
+          dep.var.labels = c("Log Earnings in 2009"),
+          column.labels = c("male", "female"),
+          keep.stat = c('n', "adj.rsq"),
+          type = 'text')
+```
+
+Notice how all but two of the coefficients for the male column are statistically significant and NONE of the coefficients for the female column are significantly different than zero. Further, notice how for each level of education completed that both columns have data for, the male column is much much higher than the female column. Even a female with 20 years of education doesn't even see as high returns to log earnings as a male with 6 years of education. This agrees with the findings in part a, since it further supports the claim of a wage premium for being male.
+
+$~$
+
+#### *d. Generate the interaction between years of education and indicators for being a man and woman. Regress log earnings on years of education, the interaction between years of education and the indicator for being a woman, and the indicator for being a woman. How do these estimates relate to what you found in part c?*
+
+$~$
+
+```{r}
+#generate the interactions
+nlsy79 = nlsy79 %>%
+  mutate(hgc = as.numeric(hgc),
+         hgc_male = hgc*male,
+         hgc_female = hgc*female)
+
+#regress log earning on hgc, female, and interaction
+log_earn_female_hgcFemale = lm(log(earn2009) ~ hgc + female + hgc_female,
+                               data = nlsy79)
+
+#put in pretty table
+stargazer(log_earn_female_hgcFemale,
+          dep.var.labels = c("Log Earnings in 2009"),
+          keep.stat = c('n', "adj.rsq"),
+          type = 'text')
+
+```
+
+Note that the estimates are not statistically significant. We do see here though that females do not have as high returns to education as males and now we can even see that females' returns on education for each additional year is also lesss. So for each additional year not only is the return lower than males (they even start lower than males as seen when working out the math) but now each additional year, we can see, provides a lower benefit in terms of log earnings.
+
+$~$
+
+#### *e.  Now, also generate a variable equal to the interaction between years of education and an indicator for being a man. Regress log earnings on years of education interacted with being a man and a woman (both interactions, but not years of education alone) and an indicator for being a woman. How do these estimates relate to what you found in part c?*
+
+$~$
+
+```{r}
+#note I already created the male and hgc interaction in the previous problem
+
+#create model
+log_earn_female_hgcFemale_hgcMale = lm(log(earn2009) ~ female + hgc_female + hgc_male,
+                               data = nlsy79)
+
+#put in pretty table
+stargazer(log_earn_female_hgcFemale_hgcMale,
+          dep.var.labels = c("Log Earnings in 2009"),
+          keep.stat = c('n', "adj.rsq"),
+          type = 'text')
+```
+
+Again we can see here that the returns to education for females is less than that of males. This is seen as the coefficient on the interaction terms, representing the different returns to education based on whether you are male or female. Each of these have supported the claim that there is a wage premium for being male.
+
+$~$
+
+## **3. In a 2004 Nature article (one of the leading scientific publications), Tatem, Guerra, Atkinson, and Hay predict that women will have faster times than men in the Olympic 100 meter dash by the year 2156. This one page article is posted on Canvas.**
+
+$~$
+
+#### *a. How do the authors come to their conclusion?*
+
+They ran a linear regression on the winning times of both males and females over the past 100 years in the Olympic Games. They allowed for the interaction and thus the slopes being different, as well as many other controls such as timing accuracy and environmental variations. They then plot the lines of best fit for males and females on the same graph and extend the horizontal axis denoting time in order to "predict" the potential future of the times. The graph shows that the winning times for females is expected to fall below the males winning times around the year 2156. I have reservations and issues with this graph but that is not the question here so I will leave it at that for this part of the question.
+
+$~$
+
+#### *b.  What assumption do they make about the rate at which men’s and women’s times will improve? (Hint: Are they improving faster or slower over time?) Is this reasonable?*
+
+They are assuming that the rate at which both sexes' time improve remain constant. The graph shows that the females times will improve faster than the males times (as seen by the slope being steeper for woman than for me). I do not think this is a reasonable assumption over this long of a period of time. I think its ridiculous and unrealistic to assume that the rate will be linear over a span of around 300 years. I do think that the winning times for females are indeed improving faster than the males times over a small enough range due to the dramatic changes in females roles in our societies over the last 100 years (females being more and more able to fully devote themselves to such things rather than being confined to certain roles). But, I do not think this trend for either males or females will continue at the same rate for so long. I think it is more reasonable to assume that there will indeed be a point where both males and females will begin to plateau in their winning times and the winning times will start to decrease, but at a decreasing rate. 
+
+You can't just take a linear relationship over a relatively short range of time and extend it over hundreds of years, if you did this over a long enough period eventually they would both have winning times of less than a second or two.
+
+$~$
+
+#### *c.  Based on their model, about how fast will men and women run the 100 meter dash in the year 2600?*
+
+Looking at this model, we see the range of time is about 300 years, in which it appears that the men's time drops by about 4 seconds (from around 11 to around 7) and the women's time drops by about 6 seconds (from a little over 12 to a little over 6). So, if we applied this over another 300 years to be around the year 2600, men would have a winning time of about 3 seconds and women would have a winning time of about under 1 second. Which of course does not make sense and is unrealistic. 
+$~$
+
+## **4. Blog Post Brainstorm**
+
+$~$
+
+#### *a. What is a topic you are interested in?*
+
+I am interested in cryptocurrency and the adoption/popularity of it over time. 
+
+$~$
+
+#### *b. Google that topic and “data”. What do you find?*
+
+I have found several good datasets that I will most likely be integrating into my blog post. Such as the number of crypto ATMs over time, total unique wallet addresses over time, total market cap of crypto over time, and other things such as that.
